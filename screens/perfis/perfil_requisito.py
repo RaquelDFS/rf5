@@ -21,25 +21,14 @@ def pagina_perfil_requisito():
         st.error("Requisito não encontrado.")
         return
 
-    # Índices retornados por buscar_requisito_por_id:
-    # 0  id
-    # 1  nome
-    # 2  descricao
-    # 3  tipo
-    # 4  status
-    # 5  visivel_cliente
-    # 6  projeto_id
-    # 7  id_cliente
-    # 8  cliente (login)
+
 
     funcao = st.session_state.get("funcao")
 
     st.title("Perfil do Requisito")
     st.divider()
 
-    # -------------------------------------------------------
-    # CLIENTE — somente visualização e aprovação/reprovação
-    # -------------------------------------------------------
+
     if funcao == "cliente":
 
         st.text_input("Nome",      value=requisito[1], disabled=True)
@@ -50,7 +39,7 @@ def pagina_perfil_requisito():
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("✅ Aprovar"):
+            if st.button("Aprovar"):
                 atualizar_requisito(
                     requisito[0],
                     requisito[1],
@@ -63,7 +52,7 @@ def pagina_perfil_requisito():
                 st.rerun()
 
         with col2:
-            if st.button("❌ Reprovar"):
+            if st.button("Reprovar"):
                 atualizar_requisito(
                     requisito[0],
                     requisito[1],
@@ -79,9 +68,7 @@ def pagina_perfil_requisito():
             st.session_state["pagina_atual"] = "Início"
             st.rerun()
 
-    # -------------------------------------------------------
-    # ANALISTA — pode editar e excluir
-    # -------------------------------------------------------
+
     else:
 
         nome      = st.text_input("Nome",      value=requisito[1])

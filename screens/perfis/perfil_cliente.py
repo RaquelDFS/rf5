@@ -51,8 +51,8 @@ def pagina_perfil_cliente():
         for requisito in requisitos:
 
             dados.append({
-                "Título": requisito[1],  # nome
-                "Status": requisito[4]   # status
+                "Título": requisito[1],  
+                "Status": requisito[4]   
             })
 
         st.dataframe(
