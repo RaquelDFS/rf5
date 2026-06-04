@@ -179,10 +179,7 @@ def criar_projeto(
     id_responsavel,
     id_cliente
 ):
-    """
-    Cria um novo projeto vinculando um responsável (analista/gerente)
-    e um cliente. O status inicial é sempre 'iniciado'.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -211,9 +208,7 @@ def criar_projeto(
 
 
 def listar_projetos():
-    """
-    Retorna todos os projetos. Uso exclusivo do Gerente.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -242,10 +237,7 @@ def listar_projetos():
 
 
 def listar_projetos_por_usuario(id_usuario):
-    """
-    Retorna os projetos em que o usuário é responsável ou cliente.
-    Cobre o analista (id_responsavel) e o cliente (id_cliente).
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -271,10 +263,7 @@ def listar_projetos_por_usuario(id_usuario):
 
 
 def buscar_projeto_por_id(id_projeto):
-    """
-    Retorna todos os dados de um projeto, incluindo
-    login do responsável e do cliente vinculado.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -312,11 +301,7 @@ def atualizar_projeto(
     data_inicio,
     data_fim_prevista
 ):
-    """
-    Atualiza os campos editáveis do projeto.
-    id_responsavel, id_cliente e data_formalizacao
-    não são alterados por esta função.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -343,10 +328,7 @@ def atualizar_projeto(
 
 
 def registrar_formalizacao(id_projeto, data_formalizacao):
-    """
-    Preenchida automaticamente pelo sistema quando o PDF
-    de formalização é gerado. Também fecha o status em 'aprovado'.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -363,10 +345,7 @@ def registrar_formalizacao(id_projeto, data_formalizacao):
 
 
 def excluir_projeto(id_projeto):
-    """
-    Exclui um projeto. Permitido apenas para o Gerente.
-    O controle de permissão deve ser feito na camada de interface.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -380,10 +359,7 @@ def excluir_projeto(id_projeto):
 
 
 def _buscar_id_cliente_do_projeto(cursor, projeto_id):
-    """
-    Função interna. Busca o id_cliente vinculado ao projeto.
-    Usada por criar_requisito para herdar o cliente automaticamente.
-    """
+   
     cursor.execute("""
         SELECT id_cliente
         FROM projeto
@@ -405,15 +381,11 @@ def criar_requisito(
     tipo,
     visivel_cliente=1
 ):
-    """
-    Cria um requisito vinculado ao projeto.
-    O cliente é herdado automaticamente do projeto —
-    o analista não precisa informá-lo.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
-    # Valida se o projeto existe antes de inserir
+  
     _buscar_id_cliente_do_projeto(cursor, projeto_id)
 
     cursor.execute("""
@@ -438,10 +410,7 @@ def criar_requisito(
 
 
 def listar_todos_requisitos():
-    """
-    Retorna todos os requisitos com o cliente herdado do projeto.
-    Uso do Gerente e Analista.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -469,9 +438,7 @@ def listar_todos_requisitos():
 
 
 def listar_requisitos_por_projeto(projeto_id):
-    """
-    Retorna todos os requisitos de um projeto específico.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -496,10 +463,7 @@ def listar_requisitos_por_projeto(projeto_id):
 
 
 def listar_requisitos_cliente(id_cliente):
-    """
-    Retorna os requisitos visíveis para um cliente específico,
-    buscando via projeto ao qual ele está vinculado.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -525,9 +489,7 @@ def listar_requisitos_cliente(id_cliente):
 
 
 def buscar_requisito_por_id(id_requisito):
-    """
-    Retorna os dados de um requisito com o cliente herdado do projeto.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -563,10 +525,7 @@ def atualizar_requisito(
     status,
     visivel_cliente
 ):
-    """
-    Atualiza os campos editáveis de um requisito.
-    O projeto_id não pode ser alterado após a criação.
-    """
+
     conn = conectar()
     cursor = conn.cursor()
 
