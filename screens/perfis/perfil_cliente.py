@@ -1,12 +1,13 @@
 import streamlit as st
 
-from database.db import (
-    buscar_cliente_por_id,
-    listar_requisitos_cliente
-)
+from controllers.usuario_controller import UsuarioController
+from controllers.requisito_controller import RequisitoController
 
 
 def pagina_perfil_cliente():
+
+    usuario_controller = UsuarioController()
+    requisito_controller = RequisitoController()
 
     if "cliente_selecionado" not in st.session_state:
 
@@ -16,7 +17,7 @@ def pagina_perfil_cliente():
 
         return
 
-    cliente = buscar_cliente_por_id(
+    cliente = usuario_controller.buscar_cliente_por_id(
         st.session_state["cliente_selecionado"]
     )
 
@@ -34,9 +35,7 @@ def pagina_perfil_cliente():
 
     st.subheader("Requisitos Associados")
 
-    requisitos = listar_requisitos_cliente(
-    cliente[0]
-    )
+    requisitos = requisito_controller.listar_cliente(cliente[0])
 
     if not requisitos:
 
@@ -51,8 +50,8 @@ def pagina_perfil_cliente():
         for requisito in requisitos:
 
             dados.append({
-                "Título": requisito[1],  
-                "Status": requisito[4]   
+                "Título": requisito[1],
+                "Status": requisito[4]
             })
 
         st.dataframe(

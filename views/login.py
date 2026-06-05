@@ -1,8 +1,11 @@
 import streamlit as st
-from database.db import autenticar_usuario
+
+from controllers.usuario_controller import UsuarioController
 
 
 def tela_login():
+
+    usuario_controller = UsuarioController()
 
     st.title("ReqFlow")
 
@@ -15,7 +18,7 @@ def tela_login():
 
     if st.button("Entrar"):
 
-        usuario = autenticar_usuario(
+        usuario = usuario_controller.autenticar(
             login,
             senha
         )

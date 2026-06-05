@@ -1,6 +1,6 @@
 import streamlit as st
-import pandas as pd
-from database.db import listar_requisitos_cliente
+
+from controllers.requisito_controller import RequisitoController
 from components.tabela_requisitos import tabela_requisitos
 from components.tabela_projetos import tabela_projetos
 
@@ -12,9 +12,11 @@ def inicio_analista():
 
 def inicio_cliente():
 
+    requisito_controller = RequisitoController()
+
     st.subheader("Portal do Cliente")
 
-    requisitos = listar_requisitos_cliente(
+    requisitos = requisito_controller.listar_cliente(
         st.session_state["id_usuario"]
     )
 
@@ -50,7 +52,7 @@ def pagina_inicio():
 
     st.title("ReqFlow")
 
-    if funcao == "analista":
+    if funcao in ["analista", "gerente", "desenvolvedor", "testador"]:
         inicio_analista()
 
     elif funcao == "cliente":

@@ -1,12 +1,13 @@
 import streamlit as st
 
-from database.db import listar_projetos_por_usuario
+from controllers.projeto_controller import ProjetoController
 
 
 def tabela_projetos():
+    projeto_controller = ProjetoController()
     id_usuario = st.session_state.get("id_usuario")
 
-    projetos = listar_projetos_por_usuario(id_usuario)
+    projetos = projeto_controller.listar_por_usuario(id_usuario)
 
     if not projetos:
         st.info("Nenhum projeto encontrado.")
@@ -29,13 +30,13 @@ def tabela_projetos():
         col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 1])
 
         with col1:
-            st.write(projeto[1])  
+            st.write(projeto[1])
         with col2:
-            st.write(projeto[3])  
+            st.write(projeto[3])
         with col3:
-            st.write(projeto[4])  
+            st.write(projeto[4])
         with col4:
-            st.write(projeto[5])  
+            st.write(projeto[5])
         with col5:
             if st.button("Abrir", key=f"proj_{projeto[0]}"):
                 st.session_state["projeto_selecionado"] = projeto[0]

@@ -8,12 +8,33 @@ from screens.perfis.perfil_requisito import pagina_perfil_requisito
 from screens.projetos import pagina_projetos
 from screens.perfis.perfil_projeto import pagina_perfil_projeto
 
+
 MENUS = {
+    "gerente": [
+        "Início",
+        "Projetos",
+        "Requisitos",
+        "Clientes",
+        "Usuários",
+        "Meu Perfil"
+    ],
     "analista": [
         "Início",
         "Projetos",
         "Requisitos",
         "Clientes",
+        "Meu Perfil"
+    ],
+    "desenvolvedor": [
+        "Início",
+        "Projetos",
+        "Requisitos",
+        "Meu Perfil"
+    ],
+    "testador": [
+        "Início",
+        "Projetos",
+        "Requisitos",
         "Meu Perfil"
     ],
     "cliente": [
@@ -22,6 +43,7 @@ MENUS = {
         "Meu Perfil"
     ]
 }
+
 
 PAGINAS = {
     "Início":           pagina_inicio,
@@ -34,3 +56,4 @@ PAGINAS = {
     "Perfil Requisito": pagina_perfil_requisito,
     "Perfil Projeto":   pagina_perfil_projeto,
 }
+

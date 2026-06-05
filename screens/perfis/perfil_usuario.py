@@ -1,8 +1,11 @@
 import streamlit as st
-from database.db import alterar_senha
+
+from controllers.usuario_controller import UsuarioController
 
 
 def pagina_meu_perfil():
+
+    usuario_controller = UsuarioController()
 
     st.title("Meu Perfil")
 
@@ -38,11 +41,12 @@ def pagina_meu_perfil():
             st.error("As senhas não coincidem.")
             return
 
-        alterar_senha(
+        sucesso, mensagem = usuario_controller.alterar_senha(
             st.session_state["id_usuario"],
             nova_senha
         )
 
-        st.success(
-            "Senha alterada com sucesso."
-        )
+        if sucesso:
+            st.success(mensagem)
+        else:
+            st.error(mensagem)

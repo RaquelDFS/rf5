@@ -1,28 +1,38 @@
 import sqlite3
+from datetime import datetime
 
 
 DATABASE_NAME = "sistema.db"
 
 
 def conectar():
-    return sqlite3.connect(DATABASE_NAME)
-
+    conn = sqlite3.connect(DATABASE_NAME)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
 
 def criar_tabelas():
     conn = conectar()
     cursor = conn.cursor()
 
+    # =========================
+    # TABELA DE USUÁRIOS
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id     INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome   TEXT    NOT NULL,
             login  TEXT    NOT NULL UNIQUE,
             senha  TEXT    NOT NULL,
-            funcao TEXT    NOT NULL
+            funcao TEXT    NOT NULL,
+            email  TEXT,
+            ativo  INTEGER NOT NULL DEFAULT 1
         )
     """)
 
-
+    # =========================
+    # TABELA DE PROJETOS
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS projeto (
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,6 +66,10 @@ def criar_tabelas():
                 ON DELETE RESTRICT
         )
     """)
+
+    # =========================
+    # TABELA DE REQUISITOS
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS requisitos (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,28 +95,220 @@ def criar_tabelas():
         )
     """)
 
+    # =========================
+    # TABELA DE COMENTÁRIOS DOS REQUISITOS
+    # =========================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS comentarios_requisitos (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_requisito    INTEGER NOT NULL,
+            id_usuario      INTEGER NOT NULL,
+            comentario      TEXT    NOT NULL,
+            data_comentario TEXT    NOT NULL,
+
+            FOREIGN KEY (id_requisito)
+                REFERENCES requisitos(id)
+                ON DELETE CASCADE,
+
+            FOREIGN KEY (id_usuario)
+                REFERENCES usuarios(id)
+                ON DELETE RESTRICT
+        )
+    """)
+
+    # =========================
+    # TABELA DE HISTÓRICO / RASTREABILIDADE
+    # =========================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS historico_sistema (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo_entidade  TEXT    NOT NULL,
+            id_entidade    INTEGER NOT NULL,
+            id_usuario     INTEGER,
+            acao           TEXT    NOT NULL,
+            descricao      TEXT    NOT NULL,
+            data_historico TEXT    NOT NULL,
+
+            FOREIGN KEY (id_usuario)
+                REFERENCES usuarios(id)
+                ON DELETE SET NULL
+        )
+    """)
+
     conn.commit()
     conn.close()
 
+
+# ============================================================
+# USUÁRIOS
+# ============================================================
 
 def criar_usuarios_padrao():
     conn = conectar()
     cursor = conn.cursor()
 
     usuarios = [
-        ("raquel",  "123",    "analista"),
-        ("Wallace", "123456", "cliente"),
-        ("Caio",    "123456", "cliente")
+        ("Raquel da Fonseca", "raquel", "123", "analista", "raquel@email.com", 1),
+        ("Wallace Cliente", "Wallace", "123456", "cliente", "wallace@email.com", 1),
+        ("Caio Cliente", "Caio", "123456", "cliente", "caio@email.com", 1),
+        ("Gerente do Projeto", "gerente", "123456", "gerente", "gerente@email.com", 1),
+        ("Desenvolvedor Teste", "dev", "123456", "desenvolvedor", "dev@email.com", 1),
+        ("Testador Teste", "testador", "123456", "testador", "testador@email.com", 1)
     ]
 
     for usuario in usuarios:
         cursor.execute("""
-            INSERT OR IGNORE INTO usuarios (login, senha, funcao)
-            VALUES (?, ?, ?)
+            INSERT OR IGNORE INTO usuarios 
+            (nome, login, senha, funcao, email, ativo)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, usuario)
 
     conn.commit()
     conn.close()
+
+
+def listar_usuarios():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login, funcao, email, ativo
+        FROM usuarios
+        ORDER BY nome
+    """)
+
+    usuarios = cursor.fetchall()
+    conn.close()
+
+    return usuarios
+
+
+def listar_usuarios_ativos():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login, funcao, email, ativo
+        FROM usuarios
+        WHERE ativo = 1
+        ORDER BY nome
+    """)
+
+    usuarios = cursor.fetchall()
+    conn.close()
+
+    return usuarios
+
+
+def listar_responsaveis_projeto():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login, funcao
+        FROM usuarios
+        WHERE ativo = 1
+        AND funcao IN ('gerente', 'analista')
+        ORDER BY nome
+    """)
+
+    responsaveis = cursor.fetchall()
+    conn.close()
+
+    return responsaveis
+
+
+def buscar_usuario_por_id(id_usuario):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login, funcao, email, ativo
+        FROM usuarios
+        WHERE id = ?
+    """, (id_usuario,))
+
+    usuario = cursor.fetchone()
+    conn.close()
+
+    return usuario
+
+
+def cadastrar_usuario(nome, login, senha, funcao, email):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id
+        FROM usuarios
+        WHERE login = ?
+    """, (login,))
+
+    usuario_existente = cursor.fetchone()
+
+    if usuario_existente:
+        conn.close()
+        return False, "Já existe um usuário cadastrado com esse login."
+
+    cursor.execute("""
+        INSERT INTO usuarios
+        (nome, login, senha, funcao, email, ativo)
+        VALUES (?, ?, ?, ?, ?, 1)
+    """, (nome, login, senha, funcao, email))
+
+    conn.commit()
+    conn.close()
+
+    return True, "Usuário cadastrado com sucesso."
+
+
+def atualizar_usuario(id_usuario, nome, login, funcao, email, ativo):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id
+        FROM usuarios
+        WHERE login = ?
+        AND id <> ?
+    """, (login, id_usuario))
+
+    usuario_existente = cursor.fetchone()
+
+    if usuario_existente:
+        conn.close()
+        return False, "Já existe outro usuário com esse login."
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET nome = ?,
+            login = ?,
+            funcao = ?,
+            email = ?,
+            ativo = ?
+        WHERE id = ?
+    """, (nome, login, funcao, email, ativo, id_usuario))
+
+    conn.commit()
+    conn.close()
+
+    return True, "Usuário atualizado com sucesso."
+
+
+def desativar_usuario(id_usuario):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET ativo = 0
+        WHERE id = ?
+    """, (id_usuario,))
+
+    conn.commit()
+    conn.close()
+
+    return True, "Usuário desativado com sucesso."
 
 
 def autenticar_usuario(login, senha):
@@ -112,49 +318,15 @@ def autenticar_usuario(login, senha):
     cursor.execute("""
         SELECT id, login, funcao
         FROM usuarios
-        WHERE login = ? AND senha = ?
+        WHERE login = ?
+        AND senha = ?
+        AND ativo = 1
     """, (login, senha))
 
     usuario = cursor.fetchone()
-
     conn.close()
 
     return usuario
-
-
-def listar_clientes():
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT id, login
-        FROM usuarios
-        WHERE funcao = 'cliente'
-        ORDER BY login
-    """)
-
-    clientes = cursor.fetchall()
-
-    conn.close()
-
-    return clientes
-
-
-def buscar_cliente_por_id(id_cliente):
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT id, login, funcao
-        FROM usuarios
-        WHERE id = ?
-    """, (id_cliente,))
-
-    cliente = cursor.fetchone()
-
-    conn.close()
-
-    return cliente
 
 
 def alterar_senha(id_usuario, nova_senha):
@@ -171,6 +343,171 @@ def alterar_senha(id_usuario, nova_senha):
     conn.close()
 
 
+# ============================================================
+# CLIENTES
+# Neste MVP, cliente é um usuário com funcao = 'cliente'
+# ============================================================
+
+def listar_clientes():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login
+        FROM usuarios
+        WHERE funcao = 'cliente'
+        AND ativo = 1
+        ORDER BY nome
+    """)
+
+    clientes = cursor.fetchall()
+    conn.close()
+
+    return clientes
+
+
+def listar_clientes_gestao():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login, email, ativo
+        FROM usuarios
+        WHERE funcao = 'cliente'
+        ORDER BY nome
+    """)
+
+    clientes = cursor.fetchall()
+    conn.close()
+
+    return clientes
+
+
+def buscar_cliente_por_id(id_cliente):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome, login, funcao, email, ativo
+        FROM usuarios
+        WHERE id = ?
+        AND funcao = 'cliente'
+    """, (id_cliente,))
+
+    cliente = cursor.fetchone()
+    conn.close()
+
+    return cliente
+
+
+def cadastrar_cliente(nome, login, senha, email):
+    if not nome or not nome.strip():
+        return False, "Informe o nome do cliente."
+
+    if not login or not login.strip():
+        return False, "Informe o login do cliente."
+
+    if not senha or not senha.strip():
+        return False, "Informe a senha do cliente."
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id
+        FROM usuarios
+        WHERE login = ?
+    """, (login.strip(),))
+
+    usuario_existente = cursor.fetchone()
+
+    if usuario_existente:
+        conn.close()
+        return False, "Já existe um usuário cadastrado com esse login."
+
+    cursor.execute("""
+        INSERT INTO usuarios
+        (nome, login, senha, funcao, email, ativo)
+        VALUES (?, ?, ?, 'cliente', ?, 1)
+    """, (
+        nome.strip(),
+        login.strip(),
+        senha.strip(),
+        email.strip() if email else ""
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return True, "Cliente cadastrado com sucesso."
+
+
+def atualizar_cliente(id_cliente, nome, login, email, ativo):
+    if not nome or not nome.strip():
+        return False, "Informe o nome do cliente."
+
+    if not login or not login.strip():
+        return False, "Informe o login do cliente."
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id
+        FROM usuarios
+        WHERE login = ?
+        AND id <> ?
+    """, (login.strip(), id_cliente))
+
+    usuario_existente = cursor.fetchone()
+
+    if usuario_existente:
+        conn.close()
+        return False, "Já existe outro usuário com esse login."
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET nome = ?,
+            login = ?,
+            email = ?,
+            ativo = ?,
+            funcao = 'cliente'
+        WHERE id = ?
+    """, (
+        nome.strip(),
+        login.strip(),
+        email.strip() if email else "",
+        ativo,
+        id_cliente
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return True, "Cliente atualizado com sucesso."
+
+
+def desativar_cliente(id_cliente):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET ativo = 0
+        WHERE id = ?
+        AND funcao = 'cliente'
+    """, (id_cliente,))
+
+    conn.commit()
+    conn.close()
+
+    return True, "Cliente desativado com sucesso."
+
+
+# ============================================================
+# PROJETOS
+# ============================================================
+
 def criar_projeto(
     nome,
     descricao,
@@ -179,7 +516,6 @@ def criar_projeto(
     id_responsavel,
     id_cliente
 ):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -203,12 +539,15 @@ def criar_projeto(
         id_cliente
     ))
 
+    id_projeto = cursor.lastrowid
+
     conn.commit()
     conn.close()
 
+    return id_projeto
+
 
 def listar_projetos():
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -221,8 +560,8 @@ def listar_projetos():
             p.data_inicio,
             p.data_fim_prevista,
             p.data_formalizacao,
-            resp.login AS responsavel,
-            cli.login  AS cliente
+            resp.nome AS responsavel,
+            cli.nome  AS cliente
         FROM projeto p
         INNER JOIN usuarios resp ON resp.id = p.id_responsavel
         INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
@@ -230,40 +569,57 @@ def listar_projetos():
     """)
 
     projetos = cursor.fetchall()
-
     conn.close()
 
     return projetos
 
 
 def listar_projetos_por_usuario(id_usuario):
-
     conn = conectar()
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT
-            p.id,
-            p.nome,
-            p.descricao,
-            p.status,
-            p.data_inicio,
-            p.data_fim_prevista
-        FROM projeto p
-        WHERE p.id_responsavel = ?
-           OR p.id_cliente = ?
-        ORDER BY p.id DESC
-    """, (id_usuario, id_usuario))
+        SELECT funcao
+        FROM usuarios
+        WHERE id = ?
+    """, (id_usuario,))
+
+    usuario = cursor.fetchone()
+
+    if usuario and usuario[0] == "gerente":
+        cursor.execute("""
+            SELECT
+                p.id,
+                p.nome,
+                p.descricao,
+                p.status,
+                p.data_inicio,
+                p.data_fim_prevista
+            FROM projeto p
+            ORDER BY p.id DESC
+        """)
+    else:
+        cursor.execute("""
+            SELECT
+                p.id,
+                p.nome,
+                p.descricao,
+                p.status,
+                p.data_inicio,
+                p.data_fim_prevista
+            FROM projeto p
+            WHERE p.id_responsavel = ?
+               OR p.id_cliente = ?
+            ORDER BY p.id DESC
+        """, (id_usuario, id_usuario))
 
     projetos = cursor.fetchall()
-
     conn.close()
 
     return projetos
 
 
 def buscar_projeto_por_id(id_projeto):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -278,8 +634,8 @@ def buscar_projeto_por_id(id_projeto):
             p.data_formalizacao,
             p.id_responsavel,
             p.id_cliente,
-            resp.login AS responsavel,
-            cli.login  AS cliente
+            resp.nome AS responsavel,
+            cli.nome  AS cliente
         FROM projeto p
         INNER JOIN usuarios resp ON resp.id = p.id_responsavel
         INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
@@ -287,7 +643,6 @@ def buscar_projeto_por_id(id_projeto):
     """, (id_projeto,))
 
     projeto = cursor.fetchone()
-
     conn.close()
 
     return projeto
@@ -299,36 +654,61 @@ def atualizar_projeto(
     descricao,
     status,
     data_inicio,
-    data_fim_prevista
+    data_fim_prevista,
+    id_responsavel,
+    id_cliente=None
 ):
-
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        UPDATE projeto
-        SET
-            nome              = ?,
-            descricao         = ?,
-            status            = ?,
-            data_inicio       = ?,
-            data_fim_prevista = ?
-        WHERE id = ?
-    """, (
-        nome,
-        descricao,
-        status,
-        data_inicio,
-        data_fim_prevista,
-        id_projeto
-    ))
+    if id_cliente is None:
+        cursor.execute("""
+            UPDATE projeto
+            SET
+                nome              = ?,
+                descricao         = ?,
+                status            = ?,
+                data_inicio       = ?,
+                data_fim_prevista = ?,
+                id_responsavel    = ?
+            WHERE id = ?
+        """, (
+            nome,
+            descricao,
+            status,
+            data_inicio,
+            data_fim_prevista,
+            id_responsavel,
+            id_projeto
+        ))
+    else:
+        cursor.execute("""
+            UPDATE projeto
+            SET
+                nome              = ?,
+                descricao         = ?,
+                status            = ?,
+                data_inicio       = ?,
+                data_fim_prevista = ?,
+                id_responsavel    = ?,
+                id_cliente        = ?
+            WHERE id = ?
+        """, (
+            nome,
+            descricao,
+            status,
+            data_inicio,
+            data_fim_prevista,
+            id_responsavel,
+            id_cliente,
+            id_projeto
+        ))
 
     conn.commit()
     conn.close()
 
 
 def registrar_formalizacao(id_projeto, data_formalizacao):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -345,7 +725,6 @@ def registrar_formalizacao(id_projeto, data_formalizacao):
 
 
 def excluir_projeto(id_projeto):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -358,8 +737,11 @@ def excluir_projeto(id_projeto):
     conn.close()
 
 
+# ============================================================
+# REQUISITOS
+# ============================================================
+
 def _buscar_id_cliente_do_projeto(cursor, projeto_id):
-   
     cursor.execute("""
         SELECT id_cliente
         FROM projeto
@@ -379,13 +761,12 @@ def criar_requisito(
     nome,
     descricao,
     tipo,
-    visivel_cliente=1
+    visivel_cliente=1,
+    status="em_analise"
 ):
-
     conn = conectar()
     cursor = conn.cursor()
 
-  
     _buscar_id_cliente_do_projeto(cursor, projeto_id)
 
     cursor.execute("""
@@ -394,23 +775,28 @@ def criar_requisito(
             nome,
             descricao,
             tipo,
+            status,
             visivel_cliente
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
     """, (
         projeto_id,
         nome,
         descricao,
         tipo,
+        status,
         visivel_cliente
     ))
+
+    id_requisito = cursor.lastrowid
 
     conn.commit()
     conn.close()
 
+    return id_requisito
+
 
 def listar_todos_requisitos():
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -423,22 +809,20 @@ def listar_todos_requisitos():
             r.status,
             r.visivel_cliente,
             p.nome    AS projeto,
-            cli.login AS cliente
+            cli.nome  AS cliente
         FROM requisitos r
-        INNER JOIN projeto  p   ON p.id   = r.projeto_id
+        INNER JOIN projeto  p   ON p.id  = r.projeto_id
         INNER JOIN usuarios cli ON cli.id = p.id_cliente
         ORDER BY r.id DESC
     """)
 
     dados = cursor.fetchall()
-
     conn.close()
 
     return dados
 
 
 def listar_requisitos_por_projeto(projeto_id):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -456,14 +840,12 @@ def listar_requisitos_por_projeto(projeto_id):
     """, (projeto_id,))
 
     requisitos = cursor.fetchall()
-
     conn.close()
 
     return requisitos
 
 
 def listar_requisitos_cliente(id_cliente):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -482,14 +864,12 @@ def listar_requisitos_cliente(id_cliente):
     """, (id_cliente,))
 
     requisitos = cursor.fetchall()
-
     conn.close()
 
     return requisitos
 
 
 def buscar_requisito_por_id(id_requisito):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -503,15 +883,14 @@ def buscar_requisito_por_id(id_requisito):
             r.visivel_cliente,
             r.projeto_id,
             p.id_cliente,
-            cli.login AS cliente
+            cli.nome AS cliente
         FROM requisitos r
-        INNER JOIN projeto  p   ON p.id   = r.projeto_id
+        INNER JOIN projeto  p   ON p.id  = r.projeto_id
         INNER JOIN usuarios cli ON cli.id = p.id_cliente
         WHERE r.id = ?
     """, (id_requisito,))
 
     requisito = cursor.fetchone()
-
     conn.close()
 
     return requisito
@@ -525,7 +904,6 @@ def atualizar_requisito(
     status,
     visivel_cliente
 ):
-
     conn = conectar()
     cursor = conn.cursor()
 
@@ -551,6 +929,20 @@ def atualizar_requisito(
     conn.close()
 
 
+def atualizar_status_requisito(id_requisito, status):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE requisitos
+        SET status = ?
+        WHERE id = ?
+    """, (status, id_requisito))
+
+    conn.commit()
+    conn.close()
+
+
 def excluir_requisito(id_requisito):
     conn = conectar()
     cursor = conn.cursor()
@@ -564,53 +956,347 @@ def excluir_requisito(id_requisito):
     conn.close()
 
 
-# def inserir_requisitos_teste():
-    """
-    Insere requisitos de teste apenas se o banco estiver vazio
-    e se existir ao menos um projeto cadastrado.
-    """
+# ============================================================
+# CONSULTAS COMPLETAS PARA EXPORTAÇÃO PDF
+# ============================================================
+
+def listar_requisitos_completos_por_projeto(id_projeto):
     conn = conectar()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM requisitos")
-    if cursor.fetchone()[0] > 0:
-        conn.close()
-        return
+    cursor.execute("""
+        SELECT
+            r.id,
+            r.nome,
+            r.descricao,
+            r.tipo,
+            r.status,
+            r.visivel_cliente,
+            r.projeto_id,
+            p.nome AS projeto,
+            cli.nome AS cliente,
+            resp.nome AS responsavel
+        FROM requisitos r
+        INNER JOIN projeto p ON p.id = r.projeto_id
+        INNER JOIN usuarios cli ON cli.id = p.id_cliente
+        INNER JOIN usuarios resp ON resp.id = p.id_responsavel
+        WHERE r.projeto_id = ?
+        ORDER BY r.id ASC
+    """, (id_projeto,))
 
-    cursor.execute("SELECT id FROM projeto LIMIT 1")
-    projeto = cursor.fetchone()
+    linhas = cursor.fetchall()
+    conn.close()
 
-    if projeto is None:
-        conn.close()
-        return
+    requisitos = []
 
-    projeto_id = projeto[0]
+    for linha in linhas:
+        requisitos.append({
+            "id": linha[0],
+            "nome": linha[1],
+            "descricao": linha[2],
+            "tipo": linha[3],
+            "status": linha[4],
+            "visivel_cliente": linha[5],
+            "projeto_id": linha[6],
+            "projeto": linha[7],
+            "cliente": linha[8],
+            "responsavel": linha[9]
+        })
 
-    requisitos = [
-        ("Tela de Login",          "Permitir autenticação utilizando usuário e senha.",              "funcional",    "aprovado",             projeto_id, 1),
-        ("Recuperação de Senha",   "Permitir redefinição de senha através de e-mail.",               "funcional",    "aguardando_aprovacao",  projeto_id, 1),
-        ("Dashboard Financeiro",   "Exibir indicadores financeiros e gráficos de desempenho.",       "funcional",    "em_analise",            projeto_id, 0),
-        ("Tempo de Resposta",      "As páginas devem carregar em até 2 segundos.",                   "nao_funcional","aprovado",              projeto_id, 1),
-        ("Exportação para PDF",    "Permitir exportação dos relatórios em formato PDF.",             "funcional",    "reprovado",             projeto_id, 1),
-        ("Controle de Permissões", "Permitir acesso às funcionalidades conforme perfil do usuário.", "funcional",    "em_analise",            projeto_id, 0),
-    ]
+    return requisitos
 
-    cursor.executemany("""
-        INSERT INTO requisitos (
-            nome,
-            descricao,
-            tipo,
-            status,
-            projeto_id,
-            visivel_cliente
+
+def listar_comentarios_por_projeto(id_projeto):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            c.id,
+            c.id_requisito,
+            r.nome AS requisito,
+            c.comentario,
+            c.data_comentario,
+            u.nome AS usuario,
+            u.funcao AS funcao
+        FROM comentarios_requisitos c
+        INNER JOIN requisitos r ON r.id = c.id_requisito
+        INNER JOIN usuarios u ON u.id = c.id_usuario
+        WHERE r.projeto_id = ?
+        ORDER BY c.id ASC
+    """, (id_projeto,))
+
+    linhas = cursor.fetchall()
+    conn.close()
+
+    comentarios = []
+
+    for linha in linhas:
+        comentarios.append({
+            "id": linha[0],
+            "id_requisito": linha[1],
+            "requisito": linha[2],
+            "comentario": linha[3],
+            "data_comentario": linha[4],
+            "usuario": linha[5],
+            "funcao": linha[6]
+        })
+
+    return comentarios
+
+
+def listar_historico_por_projeto_e_requisitos(id_projeto):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            h.id AS historico_id,
+            h.tipo_entidade AS tipo_entidade,
+            h.id_entidade AS id_entidade,
+            h.acao AS acao,
+            h.descricao AS descricao,
+            h.data_historico AS data_historico,
+            u.nome AS usuario,
+            u.funcao AS funcao,
+            NULL AS requisito
+        FROM historico_sistema h
+        LEFT JOIN usuarios u ON u.id = h.id_usuario
+        WHERE h.tipo_entidade = 'projeto'
+        AND h.id_entidade = ?
+
+        UNION ALL
+
+        SELECT
+            h.id AS historico_id,
+            h.tipo_entidade AS tipo_entidade,
+            h.id_entidade AS id_entidade,
+            h.acao AS acao,
+            h.descricao AS descricao,
+            h.data_historico AS data_historico,
+            u.nome AS usuario,
+            u.funcao AS funcao,
+            r.nome AS requisito
+        FROM historico_sistema h
+        LEFT JOIN usuarios u ON u.id = h.id_usuario
+        INNER JOIN requisitos r ON r.id = h.id_entidade
+        WHERE h.tipo_entidade = 'requisito'
+        AND r.projeto_id = ?
+
+        ORDER BY historico_id ASC
+    """, (id_projeto, id_projeto))
+
+    linhas = cursor.fetchall()
+    conn.close()
+
+    historicos = []
+
+    for linha in linhas:
+        historicos.append({
+            "id": linha[0],
+            "tipo_entidade": linha[1],
+            "id_entidade": linha[2],
+            "acao": linha[3],
+            "descricao": linha[4],
+            "data_historico": linha[5],
+            "usuario": linha[6] if linha[6] else "Sistema",
+            "funcao": linha[7] if linha[7] else "-",
+            "requisito": linha[8]
+        })
+
+    return historicos
+
+
+def listar_aprovacoes_reprovacoes_por_projeto(id_projeto):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            h.id,
+            h.acao,
+            h.descricao,
+            h.data_historico,
+            u.nome AS usuario,
+            u.funcao AS funcao,
+            r.nome AS requisito
+        FROM historico_sistema h
+        LEFT JOIN usuarios u ON u.id = h.id_usuario
+        INNER JOIN requisitos r ON r.id = h.id_entidade
+        WHERE h.tipo_entidade = 'requisito'
+        AND r.projeto_id = ?
+        AND (
+            LOWER(h.acao) LIKE '%aprov%'
+            OR LOWER(h.acao) LIKE '%reprov%'
+            OR LOWER(h.descricao) LIKE '%aprov%'
+            OR LOWER(h.descricao) LIKE '%reprov%'
         )
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, requisitos)
+        ORDER BY h.id ASC
+    """, (id_projeto,))
+
+    linhas = cursor.fetchall()
+    conn.close()
+
+    registros = []
+
+    for linha in linhas:
+        registros.append({
+            "id": linha[0],
+            "acao": linha[1],
+            "descricao": linha[2],
+            "data_historico": linha[3],
+            "usuario": linha[4] if linha[4] else "Sistema",
+            "funcao": linha[5] if linha[5] else "-",
+            "requisito": linha[6]
+        })
+
+    return registros
+
+
+# ============================================================
+# COMENTÁRIOS DOS REQUISITOS
+# ============================================================
+
+def criar_comentario_requisito(id_requisito, id_usuario, comentario):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    data_comentario = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    cursor.execute("""
+        INSERT INTO comentarios_requisitos (
+            id_requisito,
+            id_usuario,
+            comentario,
+            data_comentario
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        id_requisito,
+        id_usuario,
+        comentario,
+        data_comentario
+    ))
 
     conn.commit()
     conn.close()
 
 
+def listar_comentarios_requisito(id_requisito):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            c.id,
+            c.comentario,
+            c.data_comentario,
+            u.nome,
+            u.funcao
+        FROM comentarios_requisitos c
+        INNER JOIN usuarios u ON u.id = c.id_usuario
+        WHERE c.id_requisito = ?
+        ORDER BY c.id ASC
+    """, (id_requisito,))
+
+    comentarios = cursor.fetchall()
+    conn.close()
+
+    return comentarios
+
+
+# ============================================================
+# HISTÓRICO / RASTREABILIDADE
+# ============================================================
+
+def registrar_historico(
+    tipo_entidade,
+    id_entidade,
+    id_usuario,
+    acao,
+    descricao
+):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    data_historico = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    cursor.execute("""
+        INSERT INTO historico_sistema (
+            tipo_entidade,
+            id_entidade,
+            id_usuario,
+            acao,
+            descricao,
+            data_historico
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        tipo_entidade,
+        id_entidade,
+        id_usuario,
+        acao,
+        descricao,
+        data_historico
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def listar_historico_requisito(id_requisito):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            h.id,
+            h.acao,
+            h.descricao,
+            h.data_historico,
+            u.nome,
+            u.funcao
+        FROM historico_sistema h
+        LEFT JOIN usuarios u ON u.id = h.id_usuario
+        WHERE h.tipo_entidade = 'requisito'
+        AND h.id_entidade = ?
+        ORDER BY h.id DESC
+    """, (id_requisito,))
+
+    historico = cursor.fetchall()
+    conn.close()
+
+    return historico
+
+
+def listar_historico_projeto(id_projeto):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            h.id,
+            h.acao,
+            h.descricao,
+            h.data_historico,
+            u.nome,
+            u.funcao
+        FROM historico_sistema h
+        LEFT JOIN usuarios u ON u.id = h.id_usuario
+        WHERE h.tipo_entidade = 'projeto'
+        AND h.id_entidade = ?
+        ORDER BY h.id DESC
+    """, (id_projeto,))
+
+    historico = cursor.fetchall()
+    conn.close()
+
+    return historico
+
+
+# ============================================================
+# INICIALIZAÇÃO DO BANCO
+# ============================================================
 
 def inicializar_banco():
     criar_tabelas()

@@ -1,0 +1,5 @@
+from .usuario_controller import UsuarioController
+from .projeto_controller import ProjetoController
+from .requisito_controller import RequisitoController
+from .comentario_controller import ComentarioController
+from .historico_controller import HistoricoController
