@@ -102,7 +102,6 @@ A aplicação segue uma estrutura organizada em camadas, mantendo simplicidade n
 
 Fluxo principal:
 
-```text
 Tela Streamlit
 ↓
 Controller
@@ -112,7 +111,6 @@ Service
 database/db.py
 ↓
 sistema.db
-```
 
 Essa divisão permite separar responsabilidades:
 
@@ -126,7 +124,7 @@ Essa divisão permite separar responsabilidades:
 
 ## Estrutura de Pastas
 
-```text
+
 rf5/
 ├── app.py
 ├── requirements.txt
@@ -183,7 +181,6 @@ rf5/
 └── views/
     ├── login.py
     └── dashboard.py
-```
 
 ---
 
