@@ -8,7 +8,6 @@ A solução utiliza uma arquitetura em camadas, aproximando a aplicação de um 
 
 O fluxo principal da aplicação é:
 
-```text
 Interface Streamlit
 ↓
 Controller
@@ -18,7 +17,7 @@ Service
 Database
 ↓
 SQLite
-```
+
 
 Essa estrutura ajuda a separar o que cada parte do sistema deve fazer, tornando o projeto mais fácil de entender, testar e evoluir.
 
@@ -136,7 +135,6 @@ Essa separação evita que toda a lógica fique concentrada em um único arquivo
 
 Exemplo prático:
 
-```text
 A tela de usuários solicita um cadastro
 ↓
 O controller valida os dados
@@ -144,7 +142,7 @@ O controller valida os dados
 O service encaminha a operação
 ↓
 O database grava no SQLite
-```
+
 
 ---
 
