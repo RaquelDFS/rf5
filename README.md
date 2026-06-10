@@ -236,14 +236,14 @@ Após executar o comando, o Streamlit abrirá o sistema no navegador.
 
 ## Credenciais de Demonstração
 
-| Perfil | Login | Senha |
-|---|---|---|
-| Gerente | gerente | 123456 |
-| Analista | raquel | 123 |
-| Cliente | Wallace | 123456 |
-| Cliente | Caio | 123456 |
-| Desenvolvedor | dev | 123456 |
-| Testador | testador | 123456 |
+| Perfil        | Login         | Senha  |
+| ------------- | ------------- | ------ |
+| Gerente       | gerente       | 123456 |
+| Analista      | analista      | 123456 |
+| Cliente       | cliente1      | 123456 |
+| Cliente       | cliente2      | 123456 |
+| Desenvolvedor | desenvolvedor | 123456 |
+| Testador      | testador      | 123456 |
 
 As credenciais podem variar conforme os dados cadastrados no banco `sistema.db`.
 

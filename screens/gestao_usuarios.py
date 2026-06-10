@@ -6,8 +6,8 @@ from controllers.usuario_controller import UsuarioController
 def tela_gestao_usuarios():
     """Tela administrativa de usuários.
 
-    Esta tela agora usa a camada Controller/Service para aproximar o projeto
-    da estrutura POO, mantendo a interface simples em Streamlit.
+    Esta tela permite que o gerente cadastre, busque, visualize, edite,
+    desative, reative e redefina a senha dos usuários do sistema.
     """
 
     controller = UsuarioController()
@@ -15,8 +15,8 @@ def tela_gestao_usuarios():
     st.title("Gestão de Usuários")
 
     st.write(
-        "Nesta tela, o gerente pode cadastrar, visualizar, editar "
-        "e desativar usuários do sistema."
+        "Nesta tela, o gerente pode cadastrar, buscar, editar, "
+        "desativar, reativar e redefinir senhas dos usuários do sistema."
     )
 
     if "form_usuario_id" not in st.session_state:
@@ -26,8 +26,11 @@ def tela_gestao_usuarios():
     if mensagem_usuario:
         st.success(mensagem_usuario)
 
-    abas = st.tabs(["Cadastrar Usuário", "Usuários Cadastrados"])
+    abas = st.tabs(["Cadastrar Usuário", "Buscar Usuários"])
 
+    # ============================================================
+    # ABA 1 - CADASTRAR USUÁRIO
+    # ============================================================
     with abas[0]:
         st.subheader("Cadastrar novo usuário")
 
@@ -91,8 +94,40 @@ def tela_gestao_usuarios():
                 else:
                     st.warning(mensagem)
 
+    # ============================================================
+    # ABA 2 - BUSCAR USUÁRIOS
+    # ============================================================
     with abas[1]:
-        st.subheader("Usuários cadastrados")
+        st.subheader("Buscar usuários cadastrados")
+
+        st.info(
+            "Digite uma informação para buscar o usuário. "
+            "Nenhum usuário será exibido sem uma busca."
+        )
+
+        col_busca, col_status = st.columns([2, 1])
+
+        with col_busca:
+            termo_busca = st.text_input(
+                "Buscar por nome, login, e-mail ou função",
+                placeholder="Exemplo: gerente, raquel, cliente, dev..."
+            )
+
+        with col_status:
+            filtro_status = st.selectbox(
+                "Status",
+                ["Todos", "Ativos", "Inativos"]
+            )
+
+        termo_busca = termo_busca.strip().lower()
+
+        if not termo_busca:
+            st.warning("Informe um termo de busca para exibir usuários.")
+            return
+
+        if len(termo_busca) < 2:
+            st.warning("Digite pelo menos 2 caracteres para realizar a busca.")
+            return
 
         usuarios = controller.listar()
 
@@ -100,7 +135,43 @@ def tela_gestao_usuarios():
             st.info("Nenhum usuário cadastrado.")
             return
 
+        usuarios_filtrados = []
+
         for usuario in usuarios:
+            id_usuario = usuario[0]
+            nome = usuario[1] or ""
+            login = usuario[2] or ""
+            funcao = usuario[3] or ""
+            email = usuario[4] or ""
+            ativo = usuario[5]
+
+            status_texto = "ativo" if ativo == 1 else "inativo"
+
+            texto_usuario = (
+                f"{nome} {login} {funcao} {email} {status_texto}"
+            ).lower()
+
+            encontrou_termo = termo_busca in texto_usuario
+
+            if filtro_status == "Ativos":
+                passou_status = ativo == 1
+            elif filtro_status == "Inativos":
+                passou_status = ativo == 0
+            else:
+                passou_status = True
+
+            if encontrou_termo and passou_status:
+                usuarios_filtrados.append(usuario)
+
+        if not usuarios_filtrados:
+            st.info("Nenhum usuário encontrado para a busca realizada.")
+            return
+
+        st.success(
+            f"{len(usuarios_filtrados)} usuário(s) encontrado(s)."
+        )
+
+        for usuario in usuarios_filtrados:
             id_usuario = usuario[0]
             nome = usuario[1]
             login = usuario[2]
@@ -110,8 +181,13 @@ def tela_gestao_usuarios():
 
             status = "Ativo" if ativo == 1 else "Inativo"
 
-            with st.expander(f"{nome} | {funcao} | {status}"):
+            with st.expander(f"{nome} | {login} | {funcao} | {status}"):
+
+                # ====================================================
+                # FORMULÁRIO DE EDIÇÃO DO USUÁRIO
+                # ====================================================
                 with st.form(f"form_editar_usuario_{id_usuario}"):
+
                     novo_nome = st.text_input(
                         "Nome",
                         value=nome,
@@ -153,13 +229,7 @@ def tela_gestao_usuarios():
                         key=f"ativo_{id_usuario}"
                     )
 
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        salvar = st.form_submit_button("Salvar alterações")
-
-                    with col2:
-                        desativar = st.form_submit_button("Desativar usuário")
+                    salvar = st.form_submit_button("Salvar alterações")
 
                     if salvar:
                         sucesso, mensagem = controller.atualizar(
@@ -177,11 +247,80 @@ def tela_gestao_usuarios():
                         else:
                             st.warning(mensagem)
 
-                    if desativar:
+                st.divider()
+
+                # ====================================================
+                # REDEFINIR SENHA PELO GERENTE
+                # ====================================================
+                st.subheader("Redefinir senha")
+
+                with st.form(f"form_redefinir_senha_{id_usuario}"):
+
+                    nova_senha = st.text_input(
+                        "Nova senha",
+                        type="password",
+                        key=f"nova_senha_{id_usuario}"
+                    )
+
+                    confirmar_senha = st.text_input(
+                        "Confirmar nova senha",
+                        type="password",
+                        key=f"confirmar_senha_{id_usuario}"
+                    )
+
+                    redefinir_senha = st.form_submit_button("Redefinir senha")
+
+                    if redefinir_senha:
+
+                        if not nova_senha:
+                            st.warning("Informe a nova senha.")
+                        elif nova_senha != confirmar_senha:
+                            st.warning("As senhas não coincidem.")
+                        else:
+                            sucesso, mensagem = controller.alterar_senha(
+                                id_usuario,
+                                nova_senha
+                            )
+
+                            if sucesso:
+                                st.success("Senha redefinida com sucesso.")
+                                st.rerun()
+                            else:
+                                st.warning(mensagem)
+
+                st.divider()
+
+                # ====================================================
+                # DESATIVAR OU REATIVAR USUÁRIO
+                # ====================================================
+                if ativo == 1:
+                    if st.button(
+                        "Desativar usuário",
+                        key=f"btn_desativar_{id_usuario}"
+                    ):
                         sucesso, mensagem = controller.desativar(id_usuario)
 
                         if sucesso:
                             st.success(mensagem)
+                            st.rerun()
+                        else:
+                            st.warning(mensagem)
+                else:
+                    if st.button(
+                        "Reativar usuário",
+                        key=f"btn_reativar_{id_usuario}"
+                    ):
+                        sucesso, mensagem = controller.atualizar(
+                            id_usuario=id_usuario,
+                            nome=nome,
+                            login=login,
+                            funcao=funcao,
+                            email=email,
+                            ativo=1
+                        )
+
+                        if sucesso:
+                            st.success("Usuário reativado com sucesso.")
                             st.rerun()
                         else:
                             st.warning(mensagem)
