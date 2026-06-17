@@ -2,6 +2,7 @@ from screens.requisitos import pagina_requisitos
 from screens.clientes import pagina_clientes
 from screens.usuarios import pagina_usuarios
 from screens.inicio import pagina_inicio
+from screens.administracao import pagina_administracao
 from screens.perfis.perfil_usuario import pagina_meu_perfil
 from screens.perfis.perfil_cliente import pagina_perfil_cliente
 from screens.perfis.perfil_requisito import pagina_perfil_requisito
@@ -16,6 +17,7 @@ MENUS = {
         "Requisitos",
         "Clientes",
         "Usuários",
+        "Administração",
         "Meu Perfil"
     ],
     "analista": [
@@ -51,9 +53,9 @@ PAGINAS = {
     "Requisitos":       pagina_requisitos,
     "Clientes":         pagina_clientes,
     "Usuários":         pagina_usuarios,
+    "Administração":    pagina_administracao,
     "Meu Perfil":       pagina_meu_perfil,
     "Perfil Cliente":   pagina_perfil_cliente,
     "Perfil Requisito": pagina_perfil_requisito,
     "Perfil Projeto":   pagina_perfil_projeto,
 }
-

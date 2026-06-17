@@ -1,7 +1,6 @@
 # Ambiente virtual
 venv/
 
-
 # Cache do Python
 __pycache__/
 *.pyc
@@ -17,3 +16,6 @@ __pycache__/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Backups do banco de dados
+backups/

@@ -1,4 +1,6 @@
 import sqlite3
+import shutil
+from pathlib import Path
 from datetime import datetime
 
 
@@ -1292,6 +1294,51 @@ def listar_historico_projeto(id_projeto):
     conn.close()
 
     return historico
+
+
+# ============================================================
+# BACKUP DO BANCO DE DADOS
+# ============================================================
+
+def gerar_backup_banco():
+    """
+    Gera uma cópia de segurança do banco sistema.db dentro da pasta backups.
+    O arquivo recebe data e hora no nome para evitar sobrescrever backups antigos.
+    """
+
+    caminho_banco = Path(DATABASE_NAME)
+
+    if not caminho_banco.exists():
+        return False, None, "Banco de dados sistema.db não encontrado."
+
+    pasta_backup = Path("backups")
+    pasta_backup.mkdir(exist_ok=True)
+
+    data_hora = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    nome_backup = f"backup_sistema_{data_hora}.db"
+    caminho_backup = pasta_backup / nome_backup
+
+    try:
+        shutil.copy2(caminho_banco, caminho_backup)
+        return True, str(caminho_backup), "Backup gerado com sucesso."
+    except Exception as erro:
+        return False, None, f"Erro ao gerar backup: {erro}"
+
+
+def listar_backups_banco():
+    """
+    Lista os backups existentes na pasta backups, do mais recente para o mais antigo.
+    """
+
+    pasta_backup = Path("backups")
+
+    if not pasta_backup.exists():
+        return []
+
+    backups = list(pasta_backup.glob("backup_sistema_*.db"))
+    backups.sort(key=lambda arquivo: arquivo.stat().st_mtime, reverse=True)
+
+    return backups
 
 
 # ============================================================
