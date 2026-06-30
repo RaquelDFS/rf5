@@ -19,13 +19,16 @@ def criar_tabelas():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
-            id     INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome   TEXT    NOT NULL,
-            login  TEXT    NOT NULL UNIQUE,
-            senha  TEXT    NOT NULL,
-            funcao TEXT    NOT NULL,
-            email  TEXT,
-            ativo  INTEGER NOT NULL DEFAULT 1
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome         TEXT    NOT NULL,
+            login        TEXT    NOT NULL UNIQUE,
+            senha        TEXT    NOT NULL,
+            funcao       TEXT    NOT NULL,
+            email        TEXT,
+            empresa      TEXT,
+            tipo_cliente TEXT,
+            documento    TEXT,
+            ativo        INTEGER NOT NULL DEFAULT 1
         )
     """)
 
@@ -126,24 +129,45 @@ def criar_tabelas():
     conn.close()
 
 
+def garantir_colunas_usuarios():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(usuarios)")
+    colunas = [coluna[1] for coluna in cursor.fetchall()]
+
+    novas_colunas = {
+        "empresa": "TEXT",
+        "tipo_cliente": "TEXT",
+        "documento": "TEXT"
+    }
+
+    for coluna, tipo in novas_colunas.items():
+        if coluna not in colunas:
+            cursor.execute(f"ALTER TABLE usuarios ADD COLUMN {coluna} {tipo}")
+
+    conn.commit()
+    conn.close()
+
+
 def criar_usuarios_padrao():
     conn = conectar()
     cursor = conn.cursor()
 
     usuarios = [
-        ("Raquel da Fonseca", "raquel", "123", "analista", "raquel@email.com", 1),
-        ("Wallace Cliente", "Wallace", "123456", "cliente", "wallace@email.com", 1),
-        ("Caio Cliente", "Caio", "123456", "cliente", "caio@email.com", 1),
-        ("Gerente do Projeto", "gerente", "123456", "gerente", "gerente@email.com", 1),
-        ("Desenvolvedor Teste", "dev", "123456", "desenvolvedor", "dev@email.com", 1),
-        ("Testador Teste", "testador", "123456", "testador", "testador@email.com", 1)
+        ("Raquel da Fonseca", "raquel", "123", "analista", "raquel@email.com", "", "", "", 1),
+        ("Wallace Oliveira", "Wallace", "123456", "cliente", "wallace@clinicavidamais.com.br", "Clínica Vida Mais", "Pessoa Jurídica", "00.000.000/0001-00", 1),
+        ("Caio Martins", "Caio", "123456", "cliente", "caio@inovatech.com.br", "InovaTech Soluções", "Pessoa Jurídica", "", 1),
+        ("Gerente do Projeto", "gerente", "123456", "gerente", "gerente@email.com", "", "", "", 1),
+        ("Desenvolvedor Teste", "dev", "123456", "desenvolvedor", "dev@email.com", "", "", "", 1),
+        ("Testador Teste", "testador", "123456", "testador", "testador@email.com", "", "", "", 1)
     ]
 
     for usuario in usuarios:
         cursor.execute("""
             INSERT OR IGNORE INTO usuarios
-            (nome, login, senha, funcao, email, ativo)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (nome, login, senha, funcao, email, empresa, tipo_cliente, documento, ativo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, usuario)
 
     conn.commit()
@@ -155,7 +179,7 @@ def listar_usuarios():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, nome, login, funcao, email, ativo
+        SELECT id, nome, login, funcao, email, empresa, tipo_cliente, documento, ativo
         FROM usuarios
         ORDER BY nome
     """)
@@ -171,7 +195,7 @@ def listar_usuarios_ativos():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, nome, login, funcao, email, ativo
+        SELECT id, nome, login, funcao, email, empresa, tipo_cliente, documento, ativo
         FROM usuarios
         WHERE ativo = 1
         ORDER BY nome
@@ -206,7 +230,7 @@ def buscar_usuario_por_id(id_usuario):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, nome, login, funcao, email, ativo
+        SELECT id, nome, login, funcao, email, empresa, tipo_cliente, documento, ativo
         FROM usuarios
         WHERE id = ?
     """, (id_usuario,))
@@ -217,7 +241,7 @@ def buscar_usuario_por_id(id_usuario):
     return usuario
 
 
-def cadastrar_usuario(nome, login, senha, funcao, email):
+def cadastrar_usuario(nome, login, senha, funcao, email, empresa="", tipo_cliente="", documento=""):
     conn = conectar()
     cursor = conn.cursor()
 
@@ -235,9 +259,9 @@ def cadastrar_usuario(nome, login, senha, funcao, email):
 
     cursor.execute("""
         INSERT INTO usuarios
-        (nome, login, senha, funcao, email, ativo)
-        VALUES (?, ?, ?, ?, ?, 1)
-    """, (nome, login, senha, funcao, email))
+        (nome, login, senha, funcao, email, empresa, tipo_cliente, documento, ativo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    """, (nome, login, senha, funcao, email, empresa, tipo_cliente, documento))
 
     conn.commit()
     conn.close()
@@ -245,7 +269,7 @@ def cadastrar_usuario(nome, login, senha, funcao, email):
     return True, "Usuário cadastrado com sucesso."
 
 
-def atualizar_usuario(id_usuario, nome, login, funcao, email, ativo):
+def atualizar_usuario(id_usuario, nome, login, funcao, email, ativo, empresa="", tipo_cliente="", documento=""):
     conn = conectar()
     cursor = conn.cursor()
 
@@ -268,9 +292,12 @@ def atualizar_usuario(id_usuario, nome, login, funcao, email, ativo):
             login = ?,
             funcao = ?,
             email = ?,
+            empresa = ?,
+            tipo_cliente = ?,
+            documento = ?,
             ativo = ?
         WHERE id = ?
-    """, (nome, login, funcao, email, ativo, id_usuario))
+    """, (nome, login, funcao, email, empresa, tipo_cliente, documento, ativo, id_usuario))
 
     conn.commit()
     conn.close()
@@ -331,11 +358,11 @@ def listar_clientes():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, nome, login
+        SELECT id, nome, login, empresa, tipo_cliente, documento
         FROM usuarios
         WHERE funcao = 'cliente'
         AND ativo = 1
-        ORDER BY nome
+        ORDER BY COALESCE(NULLIF(empresa, ''), nome)
     """)
 
     clientes = cursor.fetchall()
@@ -349,10 +376,10 @@ def listar_clientes_gestao():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, nome, login, email, ativo
+        SELECT id, nome, login, email, ativo, empresa, tipo_cliente, documento
         FROM usuarios
         WHERE funcao = 'cliente'
-        ORDER BY nome
+        ORDER BY COALESCE(NULLIF(empresa, ''), nome)
     """)
 
     clientes = cursor.fetchall()
@@ -366,7 +393,7 @@ def buscar_cliente_por_id(id_cliente):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, nome, login, funcao, email, ativo
+        SELECT id, nome, login, funcao, email, empresa, tipo_cliente, documento, ativo
         FROM usuarios
         WHERE id = ?
         AND funcao = 'cliente'
@@ -378,7 +405,7 @@ def buscar_cliente_por_id(id_cliente):
     return cliente
 
 
-def cadastrar_cliente(nome, login, senha, email):
+def cadastrar_cliente(nome, login, senha, email, empresa="", tipo_cliente="", documento=""):
     if not nome or not nome.strip():
         return False, "Informe o nome do cliente."
 
@@ -405,13 +432,16 @@ def cadastrar_cliente(nome, login, senha, email):
 
     cursor.execute("""
         INSERT INTO usuarios
-        (nome, login, senha, funcao, email, ativo)
-        VALUES (?, ?, ?, 'cliente', ?, 1)
+        (nome, login, senha, funcao, email, empresa, tipo_cliente, documento, ativo)
+        VALUES (?, ?, ?, 'cliente', ?, ?, ?, ?, 1)
     """, (
         nome.strip(),
         login.strip(),
         senha.strip(),
-        email.strip() if email else ""
+        email.strip() if email else "",
+        empresa.strip() if empresa else "",
+        tipo_cliente.strip() if tipo_cliente else "",
+        documento.strip() if documento else ""
     ))
 
     conn.commit()
@@ -420,7 +450,7 @@ def cadastrar_cliente(nome, login, senha, email):
     return True, "Cliente cadastrado com sucesso."
 
 
-def atualizar_cliente(id_cliente, nome, login, email, ativo):
+def atualizar_cliente(id_cliente, nome, login, email, ativo, empresa="", tipo_cliente="", documento=""):
     if not nome or not nome.strip():
         return False, "Informe o nome do cliente."
 
@@ -448,6 +478,9 @@ def atualizar_cliente(id_cliente, nome, login, email, ativo):
         SET nome = ?,
             login = ?,
             email = ?,
+            empresa = ?,
+            tipo_cliente = ?,
+            documento = ?,
             ativo = ?,
             funcao = 'cliente'
         WHERE id = ?
@@ -455,6 +488,9 @@ def atualizar_cliente(id_cliente, nome, login, email, ativo):
         nome.strip(),
         login.strip(),
         email.strip() if email else "",
+        empresa.strip() if empresa else "",
+        tipo_cliente.strip() if tipo_cliente else "",
+        documento.strip() if documento else "",
         ativo,
         id_cliente
     ))
@@ -535,7 +571,8 @@ def listar_projetos():
             p.data_fim_prevista,
             p.data_formalizacao,
             resp.nome AS responsavel,
-            cli.nome  AS cliente
+            COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente,
+            cli.nome AS cliente_contato
         FROM projeto p
         INNER JOIN usuarios resp ON resp.id = p.id_responsavel
         INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
@@ -571,7 +608,8 @@ def listar_projetos_por_usuario(id_usuario):
                 p.data_fim_prevista,
                 p.data_formalizacao,
                 resp.nome AS responsavel,
-                cli.nome  AS cliente
+                COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente,
+                cli.nome AS cliente_contato
             FROM projeto p
             INNER JOIN usuarios resp ON resp.id = p.id_responsavel
             INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
@@ -588,7 +626,8 @@ def listar_projetos_por_usuario(id_usuario):
                 p.data_fim_prevista,
                 p.data_formalizacao,
                 resp.nome AS responsavel,
-                cli.nome  AS cliente
+                COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente,
+                cli.nome AS cliente_contato
             FROM projeto p
             INNER JOIN usuarios resp ON resp.id = p.id_responsavel
             INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
@@ -619,7 +658,8 @@ def buscar_projeto_por_id(id_projeto):
             p.id_responsavel,
             p.id_cliente,
             resp.nome AS responsavel,
-            cli.nome  AS cliente
+            COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente,
+            cli.nome AS cliente_contato
         FROM projeto p
         INNER JOIN usuarios resp ON resp.id = p.id_responsavel
         INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
@@ -789,7 +829,7 @@ def listar_todos_requisitos():
             r.status,
             r.visivel_cliente,
             p.nome    AS projeto,
-            cli.nome  AS cliente
+            COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente
         FROM requisitos r
         INNER JOIN projeto  p   ON p.id  = r.projeto_id
         INNER JOIN usuarios cli ON cli.id = p.id_cliente
@@ -835,12 +875,13 @@ def listar_requisitos_cliente(id_cliente):
             r.nome,
             r.descricao,
             r.tipo,
-            r.status
+            r.status,
+            p.nome AS projeto
         FROM requisitos r
         INNER JOIN projeto p ON p.id = r.projeto_id
         WHERE p.id_cliente = ?
         AND r.visivel_cliente = 1
-        ORDER BY r.id DESC
+        ORDER BY p.nome ASC, r.id DESC
     """, (id_cliente,))
 
     requisitos = cursor.fetchall()
@@ -863,7 +904,7 @@ def buscar_requisito_por_id(id_requisito):
             r.visivel_cliente,
             r.projeto_id,
             p.id_cliente,
-            cli.nome AS cliente
+            COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente
         FROM requisitos r
         INNER JOIN projeto  p   ON p.id  = r.projeto_id
         INNER JOIN usuarios cli ON cli.id = p.id_cliente
@@ -950,7 +991,7 @@ def listar_requisitos_completos_por_projeto(id_projeto):
             r.visivel_cliente,
             r.projeto_id,
             p.nome AS projeto,
-            cli.nome AS cliente,
+            COALESCE(NULLIF(cli.empresa, ''), cli.nome) AS cliente,
             resp.nome AS responsavel
         FROM requisitos r
         INNER JOIN projeto p ON p.id = r.projeto_id
@@ -1296,4 +1337,5 @@ def listar_backups_banco():
 
 def inicializar_banco():
     criar_tabelas()
+    garantir_colunas_usuarios()
     criar_usuarios_padrao()

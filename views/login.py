@@ -2,8 +2,28 @@ import base64
 from pathlib import Path
 
 import streamlit as st
+from itsdangerous import URLSafeTimedSerializer
 
 from controllers.usuario_controller import UsuarioController
+
+
+CHAVE_LOGIN = "reqflow_login_local"
+
+
+def obter_assinador_login():
+    return URLSafeTimedSerializer(CHAVE_LOGIN)
+
+
+def gerar_token_login(usuario):
+    assinador = obter_assinador_login()
+
+    dados = {
+        "id_usuario": usuario[0],
+        "usuario": usuario[1],
+        "funcao": usuario[2]
+    }
+
+    return assinador.dumps(dados)
 
 
 def carregar_logo_base64():
@@ -30,7 +50,6 @@ def tela_login():
 
     with col_centro:
         col_esquerda, col_direita = st.columns([0.46, 0.54], gap="small")
-
 
         with col_esquerda:
             if logo_base64:
@@ -103,6 +122,13 @@ def tela_login():
                         st.session_state["funcao"] = usuario[2]
                         st.session_state["logado"] = True
                         st.session_state["pagina_atual"] = "Início"
+
+                        if lembrar:
+                            token = gerar_token_login(usuario)
+                            st.query_params["auth"] = token
+                        else:
+                            st.query_params.clear()
+
                         st.rerun()
 
                     else:

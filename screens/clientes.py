@@ -34,8 +34,8 @@ def exibir_topo_clientes():
                 Clientes
             </div>
             <div class="reqflow-page-hero-text">
-                Cadastre, consulte e acompanhe os clientes vinculados aos projetos
-                e fluxos de validação da plataforma ReqFlow.
+                Cadastre, consulte e acompanhe clientes, empresas solicitantes
+                e contatos responsáveis pelos projetos da plataforma ReqFlow.
             </div>
         </div>
         """,
@@ -78,6 +78,9 @@ def normalizar_clientes(clientes):
             "login": cliente[2],
             "email": cliente[3] if cliente[3] else "",
             "ativo": cliente[4],
+            "empresa": cliente[5] if cliente[5] else "",
+            "tipo_cliente": cliente[6] if cliente[6] else "",
+            "documento": cliente[7] if cliente[7] else "",
             "status": formatar_status_cliente(cliente[4])
         })
 
@@ -95,6 +98,9 @@ def aplicar_filtros_clientes(clientes, texto_busca, status_filtro):
             if texto_busca in str(cliente["nome"]).lower()
             or texto_busca in str(cliente["login"]).lower()
             or texto_busca in str(cliente["email"]).lower()
+            or texto_busca in str(cliente["empresa"]).lower()
+            or texto_busca in str(cliente["tipo_cliente"]).lower()
+            or texto_busca in str(cliente["documento"]).lower()
             or texto_busca in str(cliente["status"]).lower()
         ]
 
@@ -147,7 +153,7 @@ def formulario_cadastro_cliente():
         """
         <div class="reqflow-section-title-block">
             <h3>Novo cliente</h3>
-            <p>Preencha as informações abaixo para cadastrar um cliente no ReqFlow.</p>
+            <p>Preencha as informações abaixo para cadastrar o contato e a empresa solicitante no ReqFlow.</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -160,20 +166,48 @@ def formulario_cadastro_cliente():
             f"form_cadastro_cliente_{form_id}",
             clear_on_submit=True
         ):
-            nome = st.text_input(
-                "Nome do Cliente",
-                key=f"nome_cliente_{form_id}"
-            )
+            col_nome, col_empresa = st.columns(2)
 
-            email = st.text_input(
-                "E-mail",
-                key=f"email_cliente_{form_id}"
-            )
+            with col_nome:
+                nome = st.text_input(
+                    "Nome do contato",
+                    key=f"nome_cliente_{form_id}"
+                )
 
-            login = st.text_input(
-                "Login",
-                key=f"login_cliente_{form_id}"
-            )
+            with col_empresa:
+                empresa = st.text_input(
+                    "Empresa / organização",
+                    key=f"empresa_cliente_{form_id}"
+                )
+
+            col_tipo, col_documento = st.columns(2)
+
+            with col_tipo:
+                tipo_cliente = st.selectbox(
+                    "Tipo de cliente",
+                    ["Não informado", "Pessoa Física", "Pessoa Jurídica"],
+                    key=f"tipo_cliente_{form_id}"
+                )
+
+            with col_documento:
+                documento = st.text_input(
+                    "Documento CPF/CNPJ opcional",
+                    key=f"documento_cliente_{form_id}"
+                )
+
+            col_email, col_login = st.columns(2)
+
+            with col_email:
+                email = st.text_input(
+                    "E-mail",
+                    key=f"email_cliente_{form_id}"
+                )
+
+            with col_login:
+                login = st.text_input(
+                    "Login",
+                    key=f"login_cliente_{form_id}"
+                )
 
             senha = st.text_input(
                 "Senha",
@@ -191,7 +225,10 @@ def formulario_cadastro_cliente():
                     nome=nome,
                     login=login,
                     senha=senha,
-                    email=email
+                    email=email,
+                    empresa=empresa,
+                    tipo_cliente="" if tipo_cliente == "Não informado" else tipo_cliente,
+                    documento=documento
                 )
 
                 if sucesso:
@@ -207,7 +244,7 @@ def exibir_area_filtros_clientes(clientes):
         """
         <div class="reqflow-section-title-block">
             <h3>Consulta de clientes</h3>
-            <p>Utilize os filtros para localizar clientes por nome, login, e-mail ou status.</p>
+            <p>Utilize os filtros para localizar clientes por nome, empresa, login, e-mail, documento ou status.</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -218,7 +255,7 @@ def exibir_area_filtros_clientes(clientes):
     with col1:
         texto_busca = st.text_input(
             "Buscar cliente",
-            placeholder="Digite nome, login, e-mail ou status",
+            placeholder="Digite nome, empresa, login, e-mail, documento ou status",
             key="filtro_clientes_texto"
         )
 
@@ -250,6 +287,10 @@ def exibir_area_filtros_clientes(clientes):
 
 
 def exibir_card_cliente(cliente, funcao):
+    empresa = cliente["empresa"] if cliente["empresa"] else "Empresa não informada"
+    tipo_cliente = cliente["tipo_cliente"] if cliente["tipo_cliente"] else "Não informado"
+    documento = cliente["documento"] if cliente["documento"] else "Não informado"
+
     with st.container(border=True):
         col_titulo, col_status = st.columns([5, 1.4])
 
@@ -257,10 +298,10 @@ def exibir_card_cliente(cliente, funcao):
             st.markdown(
                 f"""
                 <div class="reqflow-project-title">
-                    {texto_html(cliente["nome"])}
+                    {texto_html(empresa)}
                 </div>
                 <div class="reqflow-project-description">
-                    Login: {texto_html(cliente["login"])}
+                    Contato: {texto_html(cliente["nome"])} | Login: {texto_html(cliente["login"])}
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -274,15 +315,29 @@ def exibir_card_cliente(cliente, funcao):
             unsafe_allow_html=True
         )
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            exibir_info_cliente("E-mail", cliente["email"] if cliente["email"] else "-")
+            exibir_info_cliente("Empresa", empresa)
 
         with col2:
-            exibir_info_cliente("Login", cliente["login"])
+            exibir_info_cliente("Contato", cliente["nome"])
 
         with col3:
+            exibir_info_cliente("Tipo", tipo_cliente)
+
+        with col4:
+            exibir_info_cliente("Documento", documento)
+
+        col5, col6, col7 = st.columns(3)
+
+        with col5:
+            exibir_info_cliente("E-mail", cliente["email"] if cliente["email"] else "-")
+
+        with col6:
+            exibir_info_cliente("Login", cliente["login"])
+
+        with col7:
             exibir_info_cliente("Status", cliente["status"])
 
         st.markdown(
@@ -305,23 +360,56 @@ def exibir_card_cliente(cliente, funcao):
         if funcao in ["gerente", "analista"]:
             with st.expander("Editar cliente"):
                 with st.form(f"form_editar_cliente_{cliente['id']}"):
-                    novo_nome = st.text_input(
-                        "Nome",
-                        value=cliente["nome"],
-                        key=f"editar_nome_cliente_{cliente['id']}"
-                    )
+                    col_nome, col_empresa = st.columns(2)
 
-                    novo_email = st.text_input(
-                        "E-mail",
-                        value=cliente["email"],
-                        key=f"editar_email_cliente_{cliente['id']}"
-                    )
+                    with col_nome:
+                        novo_nome = st.text_input(
+                            "Nome do contato",
+                            value=cliente["nome"],
+                            key=f"editar_nome_cliente_{cliente['id']}"
+                        )
 
-                    novo_login = st.text_input(
-                        "Login",
-                        value=cliente["login"],
-                        key=f"editar_login_cliente_{cliente['id']}"
-                    )
+                    with col_empresa:
+                        nova_empresa = st.text_input(
+                            "Empresa / organização",
+                            value=cliente["empresa"],
+                            key=f"editar_empresa_cliente_{cliente['id']}"
+                        )
+
+                    col_tipo, col_documento = st.columns(2)
+                    tipos = ["Não informado", "Pessoa Física", "Pessoa Jurídica"]
+                    tipo_atual = cliente["tipo_cliente"] if cliente["tipo_cliente"] in tipos else "Não informado"
+
+                    with col_tipo:
+                        novo_tipo_cliente = st.selectbox(
+                            "Tipo de cliente",
+                            options=tipos,
+                            index=tipos.index(tipo_atual),
+                            key=f"editar_tipo_cliente_{cliente['id']}"
+                        )
+
+                    with col_documento:
+                        novo_documento = st.text_input(
+                            "Documento CPF/CNPJ opcional",
+                            value=cliente["documento"],
+                            key=f"editar_documento_cliente_{cliente['id']}"
+                        )
+
+                    col_email, col_login = st.columns(2)
+
+                    with col_email:
+                        novo_email = st.text_input(
+                            "E-mail",
+                            value=cliente["email"],
+                            key=f"editar_email_cliente_{cliente['id']}"
+                        )
+
+                    with col_login:
+                        novo_login = st.text_input(
+                            "Login",
+                            value=cliente["login"],
+                            key=f"editar_login_cliente_{cliente['id']}"
+                        )
 
                     novo_status = st.selectbox(
                         "Status",
@@ -342,7 +430,10 @@ def exibir_card_cliente(cliente, funcao):
                             nome=novo_nome,
                             login=novo_login,
                             email=novo_email,
-                            ativo=novo_status
+                            ativo=novo_status,
+                            empresa=nova_empresa,
+                            tipo_cliente="" if novo_tipo_cliente == "Não informado" else novo_tipo_cliente,
+                            documento=novo_documento
                         )
 
                         if sucesso:
@@ -390,7 +481,12 @@ def exibir_resumo_clientes(clientes):
         if cliente["ativo"] == 0
     ])
 
-    col1, col2, col3 = st.columns(3)
+    empresas = len([
+        cliente for cliente in clientes
+        if cliente["empresa"]
+    ])
+
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric("Clientes cadastrados", total)
@@ -400,6 +496,9 @@ def exibir_resumo_clientes(clientes):
 
     with col3:
         st.metric("Inativos", inativos)
+
+    with col4:
+        st.metric("Com empresa", empresas)
 
 
 def pagina_clientes():

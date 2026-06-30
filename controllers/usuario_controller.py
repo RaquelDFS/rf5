@@ -26,7 +26,7 @@ class UsuarioController:
     def buscar_por_id(self, id_usuario):
         return self.service.buscar_por_id(id_usuario)
 
-    def cadastrar(self, nome, login, senha, funcao, email):
+    def cadastrar(self, nome, login, senha, funcao, email, empresa="", tipo_cliente="", documento=""):
         if not nome or not nome.strip():
             return False, "Informe o nome do usuário."
 
@@ -44,10 +44,13 @@ class UsuarioController:
             login=login.strip(),
             senha=senha.strip(),
             funcao=funcao.strip(),
-            email=email.strip() if email else ""
+            email=email.strip() if email else "",
+            empresa=empresa.strip() if empresa else "",
+            tipo_cliente=tipo_cliente.strip() if tipo_cliente else "",
+            documento=documento.strip() if documento else ""
         )
 
-    def cadastrar_cliente(self, nome, login, senha, email):
+    def cadastrar_cliente(self, nome, login, senha, email, empresa="", tipo_cliente="", documento=""):
         if not nome or not nome.strip():
             return False, "Informe o nome do cliente."
 
@@ -61,10 +64,13 @@ class UsuarioController:
             nome=nome.strip(),
             login=login.strip(),
             senha=senha.strip(),
-            email=email.strip() if email else ""
+            email=email.strip() if email else "",
+            empresa=empresa.strip() if empresa else "",
+            tipo_cliente=tipo_cliente.strip() if tipo_cliente else "",
+            documento=documento.strip() if documento else ""
         )
 
-    def atualizar(self, id_usuario, nome, login, funcao, email, ativo):
+    def atualizar(self, id_usuario, nome, login, funcao, email, ativo, empresa="", tipo_cliente="", documento=""):
         if not id_usuario:
             return False, "Usuário não informado."
 
@@ -83,10 +89,13 @@ class UsuarioController:
             login=login.strip(),
             funcao=funcao.strip(),
             email=email.strip() if email else "",
-            ativo=ativo
+            ativo=ativo,
+            empresa=empresa.strip() if empresa else "",
+            tipo_cliente=tipo_cliente.strip() if tipo_cliente else "",
+            documento=documento.strip() if documento else ""
         )
 
-    def atualizar_cliente(self, id_cliente, nome, login, email, ativo):
+    def atualizar_cliente(self, id_cliente, nome, login, email, ativo, empresa="", tipo_cliente="", documento=""):
         if not id_cliente:
             return False, "Cliente não informado."
 
@@ -101,7 +110,10 @@ class UsuarioController:
             nome=nome.strip(),
             login=login.strip(),
             email=email.strip() if email else "",
-            ativo=ativo
+            ativo=ativo,
+            empresa=empresa.strip() if empresa else "",
+            tipo_cliente=tipo_cliente.strip() if tipo_cliente else "",
+            documento=documento.strip() if documento else ""
         )
 
     def desativar(self, id_usuario):

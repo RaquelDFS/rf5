@@ -1,6 +1,5 @@
 import html
 import streamlit as st
-from textwrap import dedent
 
 from controllers.requisito_controller import RequisitoController
 from controllers.comentario_controller import ComentarioController
@@ -66,7 +65,7 @@ def texto_seguro(valor):
 
 
 def texto_html(valor):
-    return html.escape(texto_seguro(valor))
+    return html.escape(texto_seguro(valor)).replace("\n", "<br>")
 
 
 def formatar_status(status):
@@ -126,253 +125,243 @@ def obter_indice_status(status_atual, opcoes_status):
 
 
 def exibir_estilos_perfil_requisito():
-    st.markdown(
-        dedent(
-            """
-            <style>
-                .reqflow-requisito-hero {
-                    background: linear-gradient(135deg, #061B3A 0%, #0B6BFF 100%);
-                    border-radius: 24px;
-                    padding: 30px 34px;
-                    margin-bottom: 24px;
-                    box-shadow: 0 16px 38px rgba(6, 27, 58, 0.18);
-                    position: relative;
-                    overflow: hidden;
-                }
+    estilos = """
+<style>
+.reqflow-requisito-hero {
+    background: linear-gradient(135deg, #061B3A 0%, #0B6BFF 100%);
+    border-radius: 24px;
+    padding: 30px 34px;
+    margin-bottom: 24px;
+    box-shadow: 0 16px 38px rgba(6, 27, 58, 0.18);
+    position: relative;
+    overflow: hidden;
+}
 
-                .reqflow-requisito-hero::before {
-                    content: "";
-                    position: absolute;
-                    width: 380px;
-                    height: 380px;
-                    right: -160px;
-                    top: -180px;
-                    background: rgba(255, 255, 255, 0.10);
-                    border-radius: 50%;
-                }
+.reqflow-requisito-hero::before {
+    content: "";
+    position: absolute;
+    width: 380px;
+    height: 380px;
+    right: -160px;
+    top: -180px;
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 50%;
+}
 
-                .reqflow-requisito-hero::after {
-                    content: "";
-                    position: absolute;
-                    width: 280px;
-                    height: 280px;
-                    left: -120px;
-                    bottom: -150px;
-                    background: rgba(255, 255, 255, 0.08);
-                    border-radius: 50%;
-                }
+.reqflow-requisito-hero::after {
+    content: "";
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    left: -120px;
+    bottom: -150px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
 
-                .reqflow-requisito-hero-content {
-                    position: relative;
-                    z-index: 2;
-                }
+.reqflow-requisito-hero-content {
+    position: relative;
+    z-index: 2;
+}
 
-                .reqflow-requisito-pill {
-                    display: inline-block;
-                    background: rgba(255, 255, 255, 0.14);
-                    color: #DBEAFE !important;
-                    padding: 6px 12px;
-                    border-radius: 999px;
-                    font-size: 13px;
-                    font-weight: 800;
-                    margin-bottom: 14px;
-                }
+.reqflow-requisito-pill {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.14);
+    color: #DBEAFE !important;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 14px;
+}
 
-                .reqflow-requisito-title-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    gap: 20px;
-                    margin-bottom: 22px;
-                }
+.reqflow-requisito-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 22px;
+}
 
-                .reqflow-requisito-title {
-                    font-size: 34px;
-                    line-height: 1.15;
-                    font-weight: 900;
-                    color: #FFFFFF !important;
-                    letter-spacing: -0.7px;
-                    margin-bottom: 8px;
-                }
+.reqflow-requisito-title {
+    font-size: 34px;
+    line-height: 1.15;
+    font-weight: 900;
+    color: #FFFFFF !important;
+    letter-spacing: -0.7px;
+    margin-bottom: 8px;
+}
 
-                .reqflow-requisito-description {
-                    font-size: 15px;
-                    line-height: 1.55;
-                    color: #DCEBFF !important;
-                    max-width: 850px;
-                }
+.reqflow-requisito-description {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #DCEBFF !important;
+    max-width: 850px;
+}
 
-                .reqflow-requisito-grid {
-                    display: grid;
-                    grid-template-columns: repeat(4, minmax(0, 1fr));
-                    gap: 14px;
-                    margin-top: 18px;
-                }
+.reqflow-requisito-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
 
-                .reqflow-requisito-grid-item {
-                    background: rgba(255, 255, 255, 0.13);
-                    border: 1px solid rgba(255, 255, 255, 0.22);
-                    border-radius: 16px;
-                    padding: 13px 15px;
-                    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-                }
+.reqflow-requisito-grid-item {
+    background: rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 16px;
+    padding: 13px 15px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
 
-                .reqflow-requisito-grid-item span {
-                    display: block;
-                    color: #BFDBFE !important;
-                    font-size: 11px;
-                    font-weight: 900;
-                    text-transform: uppercase;
-                    letter-spacing: 0.45px;
-                    margin-bottom: 5px;
-                }
+.reqflow-requisito-grid-item span {
+    display: block;
+    color: #BFDBFE !important;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    margin-bottom: 5px;
+}
 
-                .reqflow-requisito-grid-item strong {
-                    display: block;
-                    color: #FFFFFF !important;
-                    font-size: 14px;
-                    font-weight: 850;
-                    line-height: 1.35;
-                }
+.reqflow-requisito-grid-item strong {
+    display: block;
+    color: #FFFFFF !important;
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.35;
+}
 
-                .reqflow-validacao-card {
-                    background: #FFFFFF;
-                    border: 1.5px solid #B8D4FA;
-                    border-left: 6px solid #0B6BFF;
-                    border-radius: 18px;
-                    padding: 20px 22px;
-                    margin-bottom: 18px;
-                    box-shadow: 0 12px 28px rgba(6, 27, 58, 0.10);
-                }
+.reqflow-validacao-card {
+    background: #FFFFFF;
+    border: 1.5px solid #B8D4FA;
+    border-left: 6px solid #0B6BFF;
+    border-radius: 18px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 12px 28px rgba(6, 27, 58, 0.10);
+}
 
-                .reqflow-validacao-card h3 {
-                    color: #061B3A !important;
-                    font-size: 21px;
-                    font-weight: 900;
-                    margin-bottom: 6px;
-                }
+.reqflow-validacao-card h3 {
+    color: #061B3A !important;
+    font-size: 21px;
+    font-weight: 900;
+    margin-bottom: 6px;
+}
 
-                .reqflow-validacao-card p {
-                    color: #60758C !important;
-                    font-size: 14px;
-                    line-height: 1.55;
-                    margin-bottom: 0;
-                }
+.reqflow-validacao-card p {
+    color: #60758C !important;
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 0;
+}
 
-                .reqflow-info-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                    gap: 14px;
-                    margin-bottom: 20px;
-                }
+.reqflow-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
 
-                .reqflow-info-card {
-                    background: linear-gradient(180deg, #F8FBFF 0%, #EEF6FF 100%);
-                    border: 1.5px solid #B8D4FA;
-                    border-top: 4px solid #0B6BFF;
-                    border-radius: 14px;
-                    padding: 12px 14px;
-                    min-height: 78px;
-                    box-shadow: 0 8px 18px rgba(6, 27, 58, 0.07);
-                }
+.reqflow-info-card {
+    background: linear-gradient(180deg, #F8FBFF 0%, #EEF6FF 100%);
+    border: 1.5px solid #B8D4FA;
+    border-top: 4px solid #0B6BFF;
+    border-radius: 14px;
+    padding: 12px 14px;
+    min-height: 78px;
+    box-shadow: 0 8px 18px rgba(6, 27, 58, 0.07);
+}
 
-                .reqflow-info-card-label {
-                    font-size: 11px;
-                    color: #0B6BFF !important;
-                    font-weight: 900;
-                    text-transform: uppercase;
-                    letter-spacing: 0.45px;
-                    margin-bottom: 6px;
-                }
+.reqflow-info-card-label {
+    font-size: 11px;
+    color: #0B6BFF !important;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    margin-bottom: 6px;
+}
 
-                .reqflow-info-card-value {
-                    font-size: 14px;
-                    color: #102A43 !important;
-                    font-weight: 850;
-                    line-height: 1.35;
-                }
+.reqflow-info-card-value {
+    font-size: 14px;
+    color: #102A43 !important;
+    font-weight: 850;
+    line-height: 1.35;
+}
 
-                .reqflow-descricao-card {
-                    background: #FFFFFF;
-                    border: 1.5px solid #D9E6F7;
-                    border-radius: 18px;
-                    padding: 18px 20px;
-                    margin-bottom: 18px;
-                    box-shadow: 0 10px 24px rgba(6, 27, 58, 0.07);
-                }
+.reqflow-descricao-card {
+    background: #FFFFFF;
+    border: 1.5px solid #D9E6F7;
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 24px rgba(6, 27, 58, 0.07);
+}
 
-                .reqflow-descricao-card h4 {
-                    color: #061B3A !important;
-                    font-size: 18px;
-                    font-weight: 900;
-                    margin-bottom: 8px;
-                }
+.reqflow-descricao-card h4 {
+    color: #061B3A !important;
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
 
-                .reqflow-descricao-card p {
-                    color: #102A43 !important;
-                    font-size: 14px;
-                    line-height: 1.65;
-                    margin-bottom: 0;
-                }
+.reqflow-descricao-card p {
+    color: #102A43 !important;
+    font-size: 14px;
+    line-height: 1.65;
+    margin-bottom: 0;
+}
 
-                .reqflow-decisao-alerta {
-                    background: #FFF7E6;
-                    border: 1.5px solid #FCD34D;
-                    border-left: 6px solid #F59E0B;
-                    border-radius: 16px;
-                    padding: 16px 18px;
-                    margin-bottom: 18px;
-                    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.10);
-                }
+.reqflow-decisao-alerta {
+    background: #FFF7E6;
+    border: 1.5px solid #FCD34D;
+    border-left: 6px solid #F59E0B;
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.10);
+}
 
-                .reqflow-decisao-alerta strong {
-                    color: #92400E !important;
-                    display: block;
-                    font-size: 15px;
-                    margin-bottom: 4px;
-                }
+.reqflow-decisao-alerta strong {
+    color: #92400E !important;
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
 
-                .reqflow-decisao-alerta span {
-                    color: #78350F !important;
-                    font-size: 14px;
-                    line-height: 1.5;
-                }
+.reqflow-decisao-alerta span {
+    color: #78350F !important;
+    font-size: 14px;
+    line-height: 1.5;
+}
 
-                @media (max-width: 900px) {
-                    .reqflow-requisito-title-row {
-                        flex-direction: column;
-                    }
+@media (max-width: 900px) {
+    .reqflow-requisito-title-row {
+        flex-direction: column;
+    }
 
-                    .reqflow-requisito-grid,
-                    .reqflow-info-grid {
-                        grid-template-columns: 1fr;
-                    }
+    .reqflow-requisito-grid,
+    .reqflow-info-grid {
+        grid-template-columns: 1fr;
+    }
 
-                    .reqflow-requisito-title {
-                        font-size: 28px;
-                    }
-                }
-            </style>
-            """
-        ),
-        unsafe_allow_html=True
-    )
+    .reqflow-requisito-title {
+        font-size: 28px;
+    }
+}
+</style>
+"""
+    st.markdown(estilos, unsafe_allow_html=True)
 
 
 def exibir_status_badge(status):
     status_formatado = formatar_status(status)
     classe_status = classe_status_requisito(status_formatado)
 
-    st.markdown(
-        dedent(
-            f"""
-            <span class="reqflow-project-status {classe_status}">
-                {texto_html(status_formatado)}
-            </span>
-            """
-        ),
-        unsafe_allow_html=True
-    )
+    html_badge = f"""
+<span class="reqflow-project-status {classe_status}">{texto_html(status_formatado)}</span>
+"""
+    st.markdown(html_badge, unsafe_allow_html=True)
 
 
 def exibir_topo_perfil_requisito(requisito):
@@ -385,106 +374,82 @@ def exibir_topo_perfil_requisito(requisito):
     codigo_requisito = texto_html(formatar_codigo_requisito(id_requisito))
     classe_status = classe_status_requisito(status)
 
-    st.markdown(
-        dedent(
-            f"""
-            <div class="reqflow-requisito-hero">
-                <div class="reqflow-requisito-hero-content">
-                    <div class="reqflow-requisito-pill">Perfil do requisito</div>
-
-                    <div class="reqflow-requisito-title-row">
-                        <div>
-                            <div class="reqflow-requisito-title">{nome}</div>
-                            <div class="reqflow-requisito-description">{descricao}</div>
-                        </div>
-
-                        <div>
-                            <span class="reqflow-project-status {classe_status}">
-                                {status}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="reqflow-requisito-grid">
-                        <div class="reqflow-requisito-grid-item">
-                            <span>Código</span>
-                            <strong>{codigo_requisito}</strong>
-                        </div>
-
-                        <div class="reqflow-requisito-grid-item">
-                            <span>Status</span>
-                            <strong>{status}</strong>
-                        </div>
-
-                        <div class="reqflow-requisito-grid-item">
-                            <span>Cliente</span>
-                            <strong>{cliente}</strong>
-                        </div>
-
-                        <div class="reqflow-requisito-grid-item">
-                            <span>Tipo</span>
-                            <strong>{tipo}</strong>
-                        </div>
-                    </div>
-                </div>
+    html_topo = f"""
+<div class="reqflow-requisito-hero">
+    <div class="reqflow-requisito-hero-content">
+        <div class="reqflow-requisito-pill">Perfil do requisito</div>
+        <div class="reqflow-requisito-title-row">
+            <div>
+                <div class="reqflow-requisito-title">{nome}</div>
+                <div class="reqflow-requisito-description">{descricao}</div>
             </div>
-            """
-        ),
-        unsafe_allow_html=True
-    )
+            <div>
+                <span class="reqflow-project-status {classe_status}">{status}</span>
+            </div>
+        </div>
+        <div class="reqflow-requisito-grid">
+            <div class="reqflow-requisito-grid-item">
+                <span>Código</span>
+                <strong>{codigo_requisito}</strong>
+            </div>
+            <div class="reqflow-requisito-grid-item">
+                <span>Status</span>
+                <strong>{status}</strong>
+            </div>
+            <div class="reqflow-requisito-grid-item">
+                <span>Cliente</span>
+                <strong>{cliente}</strong>
+            </div>
+            <div class="reqflow-requisito-grid-item">
+                <span>Tipo</span>
+                <strong>{tipo}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+"""
+    st.markdown(html_topo, unsafe_allow_html=True)
 
 
 def exibir_titulo_secao(titulo, descricao):
-    st.markdown(
-        dedent(
-            f"""
-            <div class="reqflow-section-title-block">
-                <h3>{texto_html(titulo)}</h3>
-                <p>{texto_html(descricao)}</p>
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
-    )
+    html_titulo = f"""
+<div class="reqflow-section-title-block">
+    <h3>{texto_html(titulo)}</h3>
+    <p>{texto_html(descricao)}</p>
+</div>
+"""
+    st.markdown(html_titulo, unsafe_allow_html=True)
 
 
-def exibir_card_info(label, valor):
-    st.markdown(
-        dedent(
-            f"""
-            <div class="reqflow-info-card">
-                <div class="reqflow-info-card-label">{texto_html(label)}</div>
-                <div class="reqflow-info-card-value">{texto_html(valor)}</div>
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
-    )
+def montar_card_info(label, valor):
+    return f"""
+<div class="reqflow-info-card">
+    <div class="reqflow-info-card-label">{texto_html(label)}</div>
+    <div class="reqflow-info-card-value">{texto_html(valor)}</div>
+</div>
+"""
 
 
 def exibir_resumo_requisito(requisito):
-    st.markdown('<div class="reqflow-info-grid">', unsafe_allow_html=True)
+    cards = [
+        montar_card_info("Código", formatar_codigo_requisito(requisito[0])),
+        montar_card_info("Projeto", f"Projeto #{requisito[6]}"),
+        montar_card_info("Cliente", requisito[8]),
+        montar_card_info("Tipo", formatar_tipo(requisito[3])),
+        montar_card_info("Status", formatar_status(requisito[4])),
+        montar_card_info("Visível ao cliente", formatar_visibilidade(requisito[5]))
+    ]
 
-    exibir_card_info("Código", formatar_codigo_requisito(requisito[0]))
-    exibir_card_info("Projeto", f"Projeto #{requisito[6]}")
-    exibir_card_info("Cliente", requisito[8])
-    exibir_card_info("Tipo", formatar_tipo(requisito[3]))
-    exibir_card_info("Status", formatar_status(requisito[4]))
-    exibir_card_info("Visível ao cliente", formatar_visibilidade(requisito[5]))
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown(
-        dedent(
-            f"""
-            <div class="reqflow-descricao-card">
-                <h4>Descrição do requisito</h4>
-                <p>{texto_html(requisito[2])}</p>
-            </div>
-            """
-        ),
-        unsafe_allow_html=True
-    )
+    html_grid = f"""
+<div class="reqflow-info-grid">
+{''.join(cards)}
+</div>
+<div class="reqflow-descricao-card">
+    <h4>Descrição do requisito</h4>
+    <p>{texto_html(requisito[2])}</p>
+</div>
+"""
+    st.markdown(html_grid, unsafe_allow_html=True)
 
 
 def montar_descricao_alteracoes(requisito, nome, descricao, tipo, status, visivel):
@@ -526,43 +491,42 @@ def bloco_comentarios(id_requisito, permitir_novo_comentario=True):
             nome_usuario = texto_html(comentario[3])
             funcao_usuario = texto_html(comentario[4])
 
-            st.markdown(
-                dedent(
-                    f"""
-                    <div class="reqflow-comment-card">
-                        <div class="reqflow-comment-header">
-                            {nome_usuario} <span>({funcao_usuario})</span>
-                        </div>
-                        <div class="reqflow-comment-text">
-                            {texto_comentario}
-                        </div>
-                        <div class="reqflow-comment-footer">
-                            Registrado em {data_comentario}
-                        </div>
-                    </div>
-                    """
-                ),
-                unsafe_allow_html=True
-            )
+            html_comentario = f"""
+<div class="reqflow-comment-card">
+    <div class="reqflow-comment-header">
+        {nome_usuario} <span>({funcao_usuario})</span>
+    </div>
+    <div class="reqflow-comment-text">
+        {texto_comentario}
+    </div>
+    <div class="reqflow-comment-footer">
+        Registrado em {data_comentario}
+    </div>
+</div>
+"""
+            st.markdown(html_comentario, unsafe_allow_html=True)
     else:
         st.info("Nenhum comentário registrado para este requisito.")
 
     if permitir_novo_comentario:
-        st.markdown(
-            dedent(
-                """
-                <div class="reqflow-validacao-card">
-                    <h3>Novo comentário</h3>
-                    <p>Use este campo para registrar dúvidas, ajustes combinados ou observações antes da decisão final.</p>
-                </div>
-                """
-            ),
-            unsafe_allow_html=True
-        )
+        html_novo_comentario = """
+<div class="reqflow-validacao-card">
+    <h3>Novo comentário</h3>
+    <p>Use este campo para registrar dúvidas, ajustes combinados ou observações antes da decisão final.</p>
+</div>
+"""
+        st.markdown(html_novo_comentario, unsafe_allow_html=True)
+
+        chave_controle_limpeza = f"controle_limpeza_comentario_{id_requisito}"
+
+        if chave_controle_limpeza not in st.session_state:
+            st.session_state[chave_controle_limpeza] = 0
+
+        chave_comentario = f"comentario_requisito_{id_requisito}_{st.session_state[chave_controle_limpeza]}"
 
         novo_comentario = st.text_area(
             "Adicionar comentário",
-            key=f"comentario_requisito_{id_requisito}"
+            key=chave_comentario
         )
 
         col_espaco, col_botao = st.columns([4, 1.6])
@@ -579,7 +543,7 @@ def bloco_comentarios(id_requisito, permitir_novo_comentario=True):
                     criar_comentario_requisito(
                         id_requisito=id_requisito,
                         id_usuario=st.session_state.get("id_usuario"),
-                        comentario=novo_comentario
+                        comentario=novo_comentario.strip()
                     )
 
                     registrar_historico(
@@ -590,6 +554,7 @@ def bloco_comentarios(id_requisito, permitir_novo_comentario=True):
                         descricao="Um novo comentário foi registrado no requisito."
                     )
 
+                    st.session_state[chave_controle_limpeza] += 1
                     st.success("Comentário registrado com sucesso.")
                     st.rerun()
     else:
@@ -607,20 +572,16 @@ def bloco_historico(id_requisito):
             nome_usuario = texto_html(historico[4] if historico[4] else "Usuário não identificado")
             funcao_usuario = texto_html(historico[5] if historico[5] else "sem função")
 
-            st.markdown(
-                dedent(
-                    f"""
-                    <div class="reqflow-history-card">
-                        <div class="reqflow-history-title">{acao}</div>
-                        <div class="reqflow-history-description">{descricao}</div>
-                        <div class="reqflow-history-footer">
-                            Registrado em {data_historico} por {nome_usuario} ({funcao_usuario})
-                        </div>
-                    </div>
-                    """
-                ),
-                unsafe_allow_html=True
-            )
+            html_historico = f"""
+<div class="reqflow-history-card">
+    <div class="reqflow-history-title">{acao}</div>
+    <div class="reqflow-history-description">{descricao}</div>
+    <div class="reqflow-history-footer">
+        Registrado em {data_historico} por {nome_usuario} ({funcao_usuario})
+    </div>
+</div>
+"""
+            st.markdown(html_historico, unsafe_allow_html=True)
     else:
         st.info("Nenhum histórico registrado para este requisito.")
 
@@ -692,17 +653,13 @@ def mostrar_dados_cliente(requisito, id_usuario):
     exibir_resumo_requisito(requisito)
 
     if status_atual == "aguardando_aprovacao":
-        st.markdown(
-            dedent(
-                """
-                <div class="reqflow-decisao-alerta">
-                    <strong>Este requisito está aguardando avaliação.</strong>
-                    <span>Antes de aprovar ou reprovar, revise a descrição e use os comentários caso precise registrar alguma dúvida ou alinhamento.</span>
-                </div>
-                """
-            ),
-            unsafe_allow_html=True
-        )
+        html_alerta = """
+<div class="reqflow-decisao-alerta">
+    <strong>Este requisito está aguardando avaliação.</strong>
+    <span>Antes de aprovar ou reprovar, revise a descrição e use os comentários caso precise registrar alguma dúvida ou alinhamento.</span>
+</div>
+"""
+        st.markdown(html_alerta, unsafe_allow_html=True)
 
         justificativa_reprovacao = st.text_area(
             "Justificativa para reprovação ou solicitação de ajuste",
@@ -817,10 +774,7 @@ def mostrar_dados_equipe(requisito, id_usuario):
             value=bool(requisito[5])
         )
 
-    st.markdown(
-        '<div class="reqflow-project-actions-line"></div>',
-        unsafe_allow_html=True
-    )
+    st.markdown('<div class="reqflow-project-actions-line"></div>', unsafe_allow_html=True)
 
     col_salvar, col_excluir, col_voltar = st.columns(3)
 

@@ -1,11 +1,14 @@
 class Usuario:
-    def __init__(self, id=None, nome="", login="", senha="", funcao="", email="", ativo=1):
+    def __init__(self, id=None, nome="", login="", senha="", funcao="", email="", empresa="", tipo_cliente="", documento="", ativo=1):
         self.id = id
         self.nome = nome
         self.login = login
         self.senha = senha
         self.funcao = funcao
         self.email = email
+        self.empresa = empresa
+        self.tipo_cliente = tipo_cliente
+        self.documento = documento
         self.ativo = ativo
 
     def esta_ativo(self):
@@ -41,6 +44,11 @@ class Usuario:
     def pode_aprovar_requisito(self):
         return self.eh_cliente()
 
+    def nome_exibicao_cliente(self):
+        if self.empresa:
+            return self.empresa
+        return self.nome
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -49,6 +57,9 @@ class Usuario:
             "senha": self.senha,
             "funcao": self.funcao,
             "email": self.email,
+            "empresa": self.empresa,
+            "tipo_cliente": self.tipo_cliente,
+            "documento": self.documento,
             "ativo": self.ativo
         }
 

@@ -41,6 +41,19 @@ def formatar_status_projeto(status):
     return mapa.get(status, texto_seguro(status))
 
 
+def formatar_cliente_opcao(cliente):
+    if cliente is None:
+        return "Selecione um cliente"
+
+    nome = texto_seguro(cliente[1]) if len(cliente) > 1 else "-"
+    empresa = texto_seguro(cliente[3]) if len(cliente) > 3 else "-"
+
+    if empresa != "-":
+        return f"{empresa} — {nome}"
+
+    return nome
+
+
 def exibir_topo_projetos():
     st.markdown(
         """
@@ -89,7 +102,8 @@ def normalizar_projetos(projetos, funcao):
             "data_fim_prevista": projeto[5],
             "data_formalizacao": projeto[6],
             "responsavel": projeto[7],
-            "cliente": projeto[8]
+            "cliente": projeto[8],
+            "cliente_contato": projeto[9] if len(projeto) > 9 else ""
         })
 
     return projetos_normalizados
@@ -107,6 +121,7 @@ def aplicar_filtros_projetos(projetos, texto_busca, status_filtro):
             or texto_busca in str(projeto["descricao"]).lower()
             or texto_busca in str(projeto["status"]).lower()
             or texto_busca in str(projeto["cliente"]).lower()
+            or texto_busca in str(projeto["cliente_contato"]).lower()
             or texto_busca in str(projeto["responsavel"]).lower()
         ]
 
@@ -188,6 +203,7 @@ def exibir_card_projeto(projeto):
     descricao = texto_seguro(projeto["descricao"])
     status = texto_seguro(projeto["status"])
     cliente = texto_seguro(projeto["cliente"])
+    cliente_contato = texto_seguro(projeto.get("cliente_contato", ""))
     responsavel = texto_seguro(projeto["responsavel"])
     data_inicio = texto_seguro(projeto["data_inicio"])
     data_fim_prevista = texto_seguro(projeto["data_fim_prevista"])
@@ -216,18 +232,28 @@ def exibir_card_projeto(projeto):
             unsafe_allow_html=True
         )
 
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2 = st.columns(2)
 
         with col1:
             exibir_info_projeto("Cliente", cliente)
 
         with col2:
-            exibir_info_projeto("Responsável", responsavel)
+            exibir_info_projeto("Contato", cliente_contato)
+
+        st.markdown(
+            '<div class="reqflow-project-section-space"></div>',
+            unsafe_allow_html=True
+        )
+
+        col3, col4, col5 = st.columns(3)
 
         with col3:
-            exibir_info_projeto("Início", data_inicio)
+            exibir_info_projeto("Responsável", responsavel)
 
         with col4:
+            exibir_info_projeto("Início", data_inicio)
+
+        with col5:
             exibir_info_projeto("Prazo", data_fim_prevista)
 
         st.markdown(
@@ -279,7 +305,7 @@ def formulario_cadastro_projeto(id_usuario):
             "Cliente",
             options=[None] + clientes,
             index=0,
-            format_func=lambda x: "Selecione um cliente" if x is None else x[1]
+            format_func=formatar_cliente_opcao
         )
 
         nome = st.text_input(
@@ -331,7 +357,7 @@ def exibir_area_filtros(projetos):
         """
         <div class="reqflow-section-title-block">
             <h3>Consulta de projetos</h3>
-            <p>Utilize os filtros para localizar projetos por nome, descrição, status, cliente ou responsável.</p>
+            <p>Utilize os filtros para localizar projetos por nome, descrição, status, cliente, contato ou responsável.</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -342,7 +368,7 @@ def exibir_area_filtros(projetos):
     with col1:
         texto_busca = st.text_input(
             "Buscar projeto",
-            placeholder="Digite nome, descrição, status, cliente ou responsável",
+            placeholder="Digite nome, descrição, status, cliente, contato ou responsável",
             key="filtro_projetos_texto"
         )
 

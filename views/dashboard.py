@@ -124,6 +124,12 @@ def exibir_titulo_navegacao():
     )
 
 
+def sair_do_sistema():
+    st.session_state.clear()
+    st.query_params.clear()
+    st.rerun()
+
+
 def tela_dashboard():
     usuario = st.session_state.get("usuario", "Usuário")
     funcao = st.session_state.get("funcao", "")
@@ -157,7 +163,6 @@ def tela_dashboard():
         use_container_width=True,
         key="botao_sair"
     ):
-        st.session_state.clear()
-        st.rerun()
+        sair_do_sistema()
 
     return st.session_state["pagina_atual"]

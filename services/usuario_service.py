@@ -33,20 +33,59 @@ class UsuarioService:
             login=registro[2],
             funcao=registro[3],
             email=registro[4],
-            ativo=registro[5]
+            empresa=registro[5],
+            tipo_cliente=registro[6],
+            documento=registro[7],
+            ativo=registro[8]
         )
 
-    def cadastrar(self, nome, login, senha, funcao, email):
-        return db.cadastrar_usuario(nome, login, senha, funcao, email)
+    def cadastrar(self, nome, login, senha, funcao, email, empresa="", tipo_cliente="", documento=""):
+        return db.cadastrar_usuario(
+            nome,
+            login,
+            senha,
+            funcao,
+            email,
+            empresa,
+            tipo_cliente,
+            documento
+        )
 
-    def cadastrar_cliente(self, nome, login, senha, email):
-        return db.cadastrar_cliente(nome, login, senha, email)
+    def cadastrar_cliente(self, nome, login, senha, email, empresa="", tipo_cliente="", documento=""):
+        return db.cadastrar_cliente(
+            nome,
+            login,
+            senha,
+            email,
+            empresa,
+            tipo_cliente,
+            documento
+        )
 
-    def atualizar(self, id_usuario, nome, login, funcao, email, ativo):
-        return db.atualizar_usuario(id_usuario, nome, login, funcao, email, ativo)
+    def atualizar(self, id_usuario, nome, login, funcao, email, ativo, empresa="", tipo_cliente="", documento=""):
+        return db.atualizar_usuario(
+            id_usuario,
+            nome,
+            login,
+            funcao,
+            email,
+            ativo,
+            empresa,
+            tipo_cliente,
+            documento
+        )
 
-    def atualizar_cliente(self, id_cliente, nome, login, email, ativo):
-        return db.atualizar_cliente(id_cliente, nome, login, email, ativo)
+    def atualizar_cliente(self, id_cliente, nome, login, email, ativo, empresa="", tipo_cliente="", documento=""):
+        return db.atualizar_cliente(
+            id_cliente,
+            nome,
+            login,
+            email,
+            ativo,
+            empresa,
+            tipo_cliente,
+            documento
+        )
 
     def desativar(self, id_usuario):
         return db.desativar_usuario(id_usuario)
