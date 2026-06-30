@@ -2,7 +2,6 @@ from services.comentario_service import ComentarioService
 
 
 class ComentarioController:
-    """Controlador de comentários."""
 
     def __init__(self):
         self.service = ComentarioService()

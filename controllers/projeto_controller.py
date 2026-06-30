@@ -2,7 +2,6 @@ from services.projeto_service import ProjetoService
 
 
 class ProjetoController:
-    """Controlador de projetos."""
 
     def __init__(self):
         self.service = ProjetoService()

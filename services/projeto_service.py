@@ -3,7 +3,6 @@ from models.projeto import Projeto
 
 
 class ProjetoService:
-    """Camada de serviço responsável pelas operações de projetos."""
 
     def listar(self):
         return db.listar_projetos()
@@ -29,7 +28,6 @@ class ProjetoService:
         )
 
     def buscar_registro_por_id(self, id_projeto):
-        """Retorna a tupla original do banco para telas que ainda usam índice."""
         return db.buscar_projeto_por_id(id_projeto)
 
     def criar(self, nome, descricao, data_inicio, data_fim_prevista, id_responsavel, id_cliente):

@@ -2,7 +2,6 @@ from services.historico_service import HistoricoService
 
 
 class HistoricoController:
-    """Controlador de histórico/rastreabilidade."""
 
     def __init__(self):
         self.service = HistoricoService()

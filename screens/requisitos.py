@@ -1,127 +1,140 @@
 import streamlit as st
+from html import escape
 
 from controllers.projeto_controller import ProjetoController
 from controllers.requisito_controller import RequisitoController
 from controllers.historico_controller import HistoricoController
 
-from components.tabela_requisitos import tabela_requisitos
+
+projeto_controller = ProjetoController()
+requisito_controller = RequisitoController()
+historico_controller = HistoricoController()
 
 
-def pagina_requisitos():
-    projeto_controller = ProjetoController()
-    requisito_controller = RequisitoController()
-    historico_controller = HistoricoController()
+def texto_seguro(valor):
+    if valor is None:
+        return "-"
 
-    funcao = st.session_state.get("funcao")
-    id_usuario = st.session_state.get("id_usuario")
+    texto = str(valor).strip()
 
-    if "form_requisito_id" not in st.session_state:
-        st.session_state["form_requisito_id"] = 0
+    if texto == "":
+        return "-"
 
-    mensagem_requisito = st.session_state.pop("mensagem_requisito", None)
-    if mensagem_requisito:
-        st.success(mensagem_requisito)
+    return texto
 
-    if funcao in ["analista", "gerente"]:
-        st.subheader("Cadastrar Requisito")
 
-        projetos = projeto_controller.listar_por_usuario(id_usuario)
+def texto_html(valor):
+    return escape(texto_seguro(valor))
 
-        if not projetos:
-            st.warning(
-                "Nenhum projeto encontrado. "
-                "Cadastre um projeto antes de criar requisitos."
-            )
-        else:
-            form_id = st.session_state["form_requisito_id"]
 
-            with st.form(
-                f"form_cadastro_requisito_{form_id}",
-                clear_on_submit=True
-            ):
-                projeto_selecionado = st.selectbox(
-                    "Projeto",
-                    options=[None] + projetos,
-                    index=0,
-                    format_func=lambda x: "Selecione um projeto" if x is None else x[1],
-                    key=f"projeto_requisito_{form_id}"
-                )
+def formatar_status(status):
+    mapa = {
+        "em_analise": "Em análise",
+        "aguardando_aprovacao": "Aguardando aprovação",
+        "aprovado": "Aprovado",
+        "reprovado": "Reprovado"
+    }
 
-                nome = st.text_input(
-                    "Nome",
-                    key=f"nome_requisito_{form_id}"
-                )
+    return mapa.get(status, status)
 
-                descricao = st.text_area(
-                    "Descrição",
-                    key=f"descricao_requisito_{form_id}"
-                )
 
-                tipo = st.selectbox(
-                    "Tipo",
-                    options=[None, "funcional", "nao_funcional"],
-                    index=0,
-                    format_func=lambda x: "Selecione o tipo" if x is None else x,
-                    key=f"tipo_requisito_{form_id}"
-                )
+def formatar_tipo(tipo):
+    mapa = {
+        "funcional": "Funcional",
+        "nao_funcional": "Não funcional"
+    }
 
-                visivel_cliente = st.checkbox(
-                    "Enviar para aprovação do cliente?",
-                    value=False,
-                    key=f"visivel_cliente_requisito_{form_id}"
-                )
+    return mapa.get(tipo, tipo)
 
-                salvar = st.form_submit_button("Salvar Requisito")
 
-                if salvar:
-                    sucesso, resultado = requisito_controller.criar(
-                        projeto_id=projeto_selecionado[0] if projeto_selecionado else None,
-                        nome=nome,
-                        descricao=descricao,
-                        tipo=tipo if tipo else "",
-                        enviar_para_cliente=visivel_cliente
-                    )
+def formatar_visibilidade(valor):
+    if valor == 1 or valor is True:
+        return "Sim"
 
-                    if not sucesso:
-                        st.error(resultado)
-                    else:
-                        id_requisito = resultado
-                        status_inicial = (
-                            "aguardando_aprovacao"
-                            if visivel_cliente
-                            else "em_analise"
-                        )
+    return "Não"
 
-                        historico_controller.registrar(
-                            tipo_entidade="requisito",
-                            id_entidade=id_requisito,
-                            id_usuario=id_usuario,
-                            acao="Requisito criado",
-                            descricao=(
-                                f"Requisito '{nome}' criado no projeto "
-                                f"'{projeto_selecionado[1]}' com status "
-                                f"'{status_inicial}'."
-                            )
-                        )
 
-                        st.session_state["mensagem_requisito"] = (
-                            "Requisito cadastrado com sucesso."
-                        )
+def classe_status_requisito(status):
+    status_texto = str(status).lower()
 
-                        st.session_state["form_requisito_id"] += 1
-                        st.rerun()
+    if "aprovado" in status_texto:
+        return "reqflow-status-green"
 
-        st.divider()
+    if "aguardando" in status_texto:
+        return "reqflow-status-yellow"
 
-    tabela_requisitos()
-import streamlit as st
+    if "reprovado" in status_texto:
+        return "reqflow-status-red"
 
-from database.db import (
-    listar_projetos_por_usuario,
-    criar_requisito,
-    listar_todos_requisitos,
-    listar_requisitos_cliente
-)
+    if "analise" in status_texto or "análise" in status_texto:
+        return "reqflow-status-blue"
+
+    return "reqflow-status-gray"
+
+
+def exibir_badge_status(status):
+    status_formatado = formatar_status(status)
+    classe_status = classe_status_requisito(status_formatado)
+
+    st.markdown(
+        f"""
+        <div class="reqflow-status-wrapper">
+            <span class="reqflow-project-status {classe_status}">
+                {texto_html(status_formatado)}
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def exibir_info_box(label, valor):
+    st.markdown(
+        f"""
+        <div class="reqflow-project-info-box">
+            <div class="reqflow-project-info-label">{texto_html(label)}</div>
+            <div class="reqflow-project-info-value">{texto_html(valor)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def exibir_topo_requisitos():
+    st.markdown(
+        """
+        <div class="reqflow-page-hero">
+            <div class="reqflow-page-hero-pill">
+                Gestão de requisitos
+            </div>
+            <div class="reqflow-page-hero-title">
+                Requisitos
+            </div>
+            <div class="reqflow-page-hero-text">
+                Cadastre, consulte e acompanhe os requisitos vinculados aos projetos,
+                clientes e fluxos de validação da plataforma ReqFlow.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def inicializar_estado_consulta_requisitos():
+    if "consulta_requisitos_realizada" not in st.session_state:
+        st.session_state["consulta_requisitos_realizada"] = False
+
+
+def marcar_consulta_requisitos():
+    st.session_state["consulta_requisitos_realizada"] = True
+
+
+def limpar_consulta_requisitos():
+    st.session_state["consulta_requisitos_realizada"] = False
+    st.session_state["filtro_requisitos_texto"] = ""
+    st.session_state["filtro_requisitos_tipo"] = "Todos"
+    st.session_state["filtro_requisitos_status"] = "Todos"
+    st.session_state["filtro_requisitos_visibilidade"] = "Todos"
 
 
 def normalizar_requisitos(requisitos, funcao):
@@ -168,12 +181,12 @@ def aplicar_filtros_requisitos(
 
         resultado = [
             requisito for requisito in resultado
-            if texto_busca in requisito["nome"].lower()
-            or texto_busca in requisito["descricao"].lower()
-            or texto_busca in requisito["tipo"].lower()
-            or texto_busca in requisito["status"].lower()
-            or texto_busca in requisito["projeto"].lower()
-            or texto_busca in requisito["cliente"].lower()
+            if texto_busca in str(requisito["nome"]).lower()
+            or texto_busca in str(requisito["descricao"]).lower()
+            or texto_busca in str(requisito["tipo"]).lower()
+            or texto_busca in str(requisito["status"]).lower()
+            or texto_busca in str(requisito["projeto"]).lower()
+            or texto_busca in str(requisito["cliente"]).lower()
         ]
 
     if tipo_filtro != "Todos":
@@ -203,90 +216,18 @@ def aplicar_filtros_requisitos(
     return resultado
 
 
-def exibir_tabela_requisitos(requisitos, funcao):
-    if not requisitos:
-        st.info("Nenhum requisito encontrado com os filtros selecionados.")
-        return
-
-    if funcao == "cliente":
-        col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
-
-        with col1:
-            st.markdown("**Nome**")
-        with col2:
-            st.markdown("**Tipo**")
-        with col3:
-            st.markdown("**Status**")
-        with col4:
-            st.markdown("**Ação**")
-
-        st.divider()
-
-        for requisito in requisitos:
-            col1, col2, col3, col4 = st.columns([4, 2, 2, 1])
-
-            with col1:
-                st.write(requisito["nome"])
-
-            with col2:
-                st.write(requisito["tipo"])
-
-            with col3:
-                st.write(requisito["status"])
-
-            with col4:
-                if st.button("Abrir", key=f"req_cliente_{requisito['id']}"):
-                    st.session_state["requisito_selecionado"] = requisito["id"]
-                    st.session_state["pagina_atual"] = "Perfil Requisito"
-                    st.rerun()
-
-    else:
-        col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 1])
-
-        with col1:
-            st.markdown("**Nome**")
-        with col2:
-            st.markdown("**Tipo**")
-        with col3:
-            st.markdown("**Status**")
-        with col4:
-            st.markdown("**Projeto**")
-        with col5:
-            st.markdown("**Visível**")
-        with col6:
-            st.markdown("**Ação**")
-
-        st.divider()
-
-        for requisito in requisitos:
-            col1, col2, col3, col4, col5, col6 = st.columns([3, 2, 2, 2, 2, 1])
-
-            with col1:
-                st.write(requisito["nome"])
-
-            with col2:
-                st.write(requisito["tipo"])
-
-            with col3:
-                st.write(requisito["status"])
-
-            with col4:
-                st.write(requisito["projeto"])
-
-            with col5:
-                st.write("Sim" if requisito["visivel_cliente"] else "Não")
-
-            with col6:
-                if st.button("Abrir", key=f"req_{requisito['id']}"):
-                    st.session_state["requisito_selecionado"] = requisito["id"]
-                    st.session_state["pagina_atual"] = "Perfil Requisito"
-                    st.rerun()
-
-
 def formulario_cadastro_requisito(id_usuario):
-    st.subheader("Cadastrar Requisito")
+    st.markdown(
+        """
+        <div class="reqflow-section-title-block">
+            <h3>Novo requisito</h3>
+            <p>Preencha as informações abaixo para cadastrar um requisito vinculado a um projeto.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    projetos = listar_projetos_por_usuario(id_usuario)
+    projetos = projeto_controller.listar_por_usuario(id_usuario)
 
     if not projetos:
         st.warning(
@@ -295,84 +236,120 @@ def formulario_cadastro_requisito(id_usuario):
         )
         return
 
-    with st.form("form_cadastro_requisito"):
-        projeto_selecionado = st.selectbox(
-            "Projeto",
-            options=projetos,
-            format_func=lambda x: x[1]
-        )
+    with st.container(border=True):
+        with st.form("form_cadastro_requisito", clear_on_submit=True):
+            projeto_selecionado = st.selectbox(
+                "Projeto",
+                options=[None] + projetos,
+                index=0,
+                format_func=lambda x: "Selecione um projeto" if x is None else x[1]
+            )
 
-        nome = st.text_input("Nome")
-        descricao = st.text_area("Descrição")
+            nome = st.text_input(
+                "Nome",
+                placeholder="Ex.: Login do usuário"
+            )
 
-        tipo = st.selectbox(
-            "Tipo",
-            ["funcional", "nao_funcional"]
-        )
+            descricao = st.text_area(
+                "Descrição",
+                placeholder="Descreva o comportamento esperado, regra de negócio ou necessidade do requisito."
+            )
 
-        visivel_cliente = st.checkbox(
-            "Enviar para aprovação do cliente?",
-            value=True
-        )
+            tipo = st.selectbox(
+                "Tipo",
+                options=[None, "funcional", "nao_funcional"],
+                index=0,
+                format_func=lambda x: "Selecione o tipo" if x is None else formatar_tipo(x)
+            )
 
-        salvar = st.form_submit_button("Salvar Requisito")
+            enviar_para_cliente = st.checkbox(
+                "Enviar para aprovação do cliente?",
+                value=False
+            )
 
-        if salvar:
-            if not nome or not descricao:
-                st.error("Preencha o nome e a descrição antes de salvar.")
-            else:
-                criar_requisito(
+            salvar = st.form_submit_button("Salvar requisito", use_container_width=True)
+
+            if salvar:
+                if projeto_selecionado is None:
+                    st.error("Selecione um projeto antes de salvar.")
+                    return
+
+                sucesso, resultado = requisito_controller.criar(
                     projeto_id=projeto_selecionado[0],
                     nome=nome,
                     descricao=descricao,
                     tipo=tipo,
-                    visivel_cliente=1 if visivel_cliente else 0
+                    enviar_para_cliente=enviar_para_cliente
                 )
-                st.success("Requisito cadastrado.")
+
+                if not sucesso:
+                    st.error(resultado)
+                    return
+
+                status_inicial = (
+                    "aguardando_aprovacao"
+                    if enviar_para_cliente
+                    else "em_analise"
+                )
+
+                historico_controller.registrar(
+                    tipo_entidade="requisito",
+                    id_entidade=resultado,
+                    id_usuario=id_usuario,
+                    acao="Requisito criado",
+                    descricao=(
+                        f"Requisito '{nome.strip()}' criado no projeto "
+                        f"'{projeto_selecionado[1]}' com status "
+                        f"'{formatar_status(status_inicial)}'."
+                    )
+                )
+
+                st.success("Requisito cadastrado com sucesso.")
                 st.rerun()
 
 
-def pagina_requisitos():
-    funcao = st.session_state.get("funcao")
-    id_usuario = st.session_state.get("id_usuario")
+def exibir_area_filtros(requisitos, funcao):
+    inicializar_estado_consulta_requisitos()
 
-    st.title("Requisitos")
-
-    if funcao in ["gerente", "analista"]:
-        formulario_cadastro_requisito(id_usuario)
-        st.divider()
-
-    st.subheader("Consulta de Requisitos")
-
-    if funcao == "cliente":
-        requisitos = listar_requisitos_cliente(id_usuario)
-    else:
-        requisitos = listar_todos_requisitos()
-
-    requisitos = normalizar_requisitos(requisitos, funcao)
+    st.markdown(
+        """
+        <div class="reqflow-section-title-block">
+            <h3>Consulta de requisitos</h3>
+            <p>Utilize os filtros para localizar requisitos por nome, descrição, tipo, status, projeto ou cliente.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     col1, col2 = st.columns([3, 2])
 
     with col1:
         texto_busca = st.text_input(
             "Buscar requisito",
-            placeholder="Digite nome, descrição, tipo, status, projeto ou cliente"
+            placeholder="Digite nome, descrição, tipo, status, projeto ou cliente",
+            key="filtro_requisitos_texto"
         )
 
     with col2:
         tipos_disponiveis = sorted(set([requisito["tipo"] for requisito in requisitos]))
+
         tipo_filtro = st.selectbox(
             "Filtrar por tipo",
-            ["Todos"] + tipos_disponiveis
+            ["Todos"] + tipos_disponiveis,
+            format_func=lambda x: x if x == "Todos" else formatar_tipo(x),
+            key="filtro_requisitos_tipo"
         )
 
     col3, col4 = st.columns(2)
 
     with col3:
         status_disponiveis = sorted(set([requisito["status"] for requisito in requisitos]))
+
         status_filtro = st.selectbox(
             "Filtrar por status",
-            ["Todos"] + status_disponiveis
+            ["Todos"] + status_disponiveis,
+            format_func=lambda x: x if x == "Todos" else formatar_status(x),
+            key="filtro_requisitos_status"
         )
 
     with col4:
@@ -381,7 +358,8 @@ def pagina_requisitos():
             st.selectbox(
                 "Visibilidade",
                 ["Todos"],
-                disabled=True
+                disabled=True,
+                key="filtro_requisitos_visibilidade_cliente"
             )
         else:
             visibilidade_filtro = st.selectbox(
@@ -390,8 +368,175 @@ def pagina_requisitos():
                     "Todos",
                     "Visível para o cliente",
                     "Não visível para o cliente"
-                ]
+                ],
+                key="filtro_requisitos_visibilidade"
             )
+
+    col_botao1, col_botao2, col_espaco = st.columns([1.4, 1.4, 4])
+
+    with col_botao1:
+        st.button(
+            "Consultar requisitos",
+            type="primary",
+            use_container_width=True,
+            on_click=marcar_consulta_requisitos
+        )
+
+    with col_botao2:
+        st.button(
+            "Limpar consulta",
+            use_container_width=True,
+            on_click=limpar_consulta_requisitos
+        )
+
+    return texto_busca, tipo_filtro, status_filtro, visibilidade_filtro
+
+
+def exibir_card_requisito(requisito, funcao):
+    nome = texto_seguro(requisito["nome"])
+    descricao = texto_seguro(requisito["descricao"])
+    tipo = formatar_tipo(requisito["tipo"])
+    status = formatar_status(requisito["status"])
+    projeto = texto_seguro(requisito["projeto"])
+    cliente = texto_seguro(requisito["cliente"])
+    visivel_cliente = formatar_visibilidade(requisito["visivel_cliente"])
+
+    with st.container(border=True):
+        col_titulo, col_status = st.columns([5, 1.5])
+
+        with col_titulo:
+            st.markdown(
+                f"""
+                <div class="reqflow-requirement-title">
+                    {texto_html(nome)}
+                </div>
+                <div class="reqflow-requirement-description">
+                    {texto_html(descricao)}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with col_status:
+            exibir_badge_status(requisito["status"])
+
+        st.markdown('<div class="reqflow-project-section-space"></div>', unsafe_allow_html=True)
+
+        if funcao == "cliente":
+            col1, col2 = st.columns(2)
+
+            with col1:
+                exibir_info_box("Tipo", tipo)
+
+            with col2:
+                exibir_info_box("Status", status)
+
+        else:
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                exibir_info_box("Tipo", tipo)
+
+            with col2:
+                exibir_info_box("Projeto", projeto)
+
+            with col3:
+                exibir_info_box("Cliente", cliente)
+
+            with col4:
+                exibir_info_box("Visível", visivel_cliente)
+
+        st.markdown('<div class="reqflow-project-actions-line"></div>', unsafe_allow_html=True)
+
+        col_espaco, col_botao = st.columns([4.5, 1.6])
+
+        with col_botao:
+            if st.button(
+                "Abrir requisito",
+                key=f"abrir_requisito_{requisito['id']}",
+                use_container_width=True
+            ):
+                st.session_state["requisito_selecionado"] = requisito["id"]
+                st.session_state["pagina_atual"] = "Perfil Requisito"
+                st.rerun()
+
+
+def exibir_lista_requisitos(requisitos, funcao):
+    if not requisitos:
+        st.info("Nenhum requisito encontrado com os filtros selecionados.")
+        return
+
+    for requisito in requisitos:
+        exibir_card_requisito(requisito, funcao)
+
+
+def exibir_resumo_quantitativo(requisitos):
+    total = len(requisitos)
+
+    em_analise = len([
+        requisito for requisito in requisitos
+        if requisito["status"] == "em_analise"
+    ])
+
+    aguardando = len([
+        requisito for requisito in requisitos
+        if requisito["status"] == "aguardando_aprovacao"
+    ])
+
+    aprovados = len([
+        requisito for requisito in requisitos
+        if requisito["status"] == "aprovado"
+    ])
+
+    reprovados = len([
+        requisito for requisito in requisitos
+        if requisito["status"] == "reprovado"
+    ])
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Requisitos", total)
+
+    with col2:
+        st.metric("Em análise", em_analise)
+
+    with col3:
+        st.metric("Aguardando aprovação", aguardando)
+
+    with col4:
+        st.metric("Aprovados/Reprovados", aprovados + reprovados)
+
+
+def pagina_requisitos():
+    funcao = st.session_state.get("funcao")
+    id_usuario = st.session_state.get("id_usuario")
+
+    exibir_topo_requisitos()
+
+    if funcao in ["gerente", "analista"]:
+        formulario_cadastro_requisito(id_usuario)
+        st.divider()
+
+    if funcao == "cliente":
+        requisitos = requisito_controller.listar_cliente(id_usuario)
+    else:
+        requisitos = requisito_controller.listar_todos()
+
+    requisitos = normalizar_requisitos(requisitos, funcao)
+
+    exibir_resumo_quantitativo(requisitos)
+
+    st.divider()
+
+    texto_busca, tipo_filtro, status_filtro, visibilidade_filtro = exibir_area_filtros(
+        requisitos,
+        funcao
+    )
+
+    if not st.session_state.get("consulta_requisitos_realizada", False):
+        st.info("Utilize os filtros acima e clique em **Consultar requisitos** para visualizar os resultados.")
+        return
 
     requisitos_filtrados = aplicar_filtros_requisitos(
         requisitos,
@@ -403,4 +548,4 @@ def pagina_requisitos():
 
     st.caption(f"Total encontrado: {len(requisitos_filtrados)} requisito(s).")
 
-    exibir_tabela_requisitos(requisitos_filtrados, funcao)
+    exibir_lista_requisitos(requisitos_filtrados, funcao)

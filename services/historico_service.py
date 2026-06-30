@@ -2,7 +2,6 @@ from database import db
 
 
 class HistoricoService:
-    """Camada de serviço responsável pela rastreabilidade do sistema."""
 
     def registrar(self, tipo_entidade, id_entidade, id_usuario, acao, descricao):
         return db.registrar_historico(

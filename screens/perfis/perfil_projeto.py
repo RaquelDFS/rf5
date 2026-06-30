@@ -82,9 +82,9 @@ def listar_aprovacoes_reprovacoes_por_projeto(id_projeto):
     return ProjetoController().listar_aprovacoes_reprovacoes(id_projeto)
 
 
-# ============================================================
-# FUNÇÕES AUXILIARES
-# ============================================================
+
+
+
 
 def obter_id_usuario_logado():
     return (
@@ -227,9 +227,9 @@ def montar_descricao_alteracoes(
     return alteracoes
 
 
-# ============================================================
-# HISTÓRICO NA TELA
-# ============================================================
+
+
+
 
 def mostrar_historico_projeto(id_projeto):
     historico = listar_historico_projeto(id_projeto)
@@ -253,9 +253,9 @@ def mostrar_historico_projeto(id_projeto):
             )
 
 
-# ============================================================
-# REQUISITOS NA TELA
-# ============================================================
+
+
+
 
 def mostrar_requisitos_do_projeto(id_projeto):
     st.subheader("Requisitos do Projeto")
@@ -287,9 +287,9 @@ def mostrar_requisitos_do_projeto(id_projeto):
                 st.rerun()
 
 
-# ============================================================
-# GERAÇÃO DO PDF
-# ============================================================
+
+
+
 
 def gerar_pdf_projeto_completo(
     projeto,
@@ -365,9 +365,9 @@ def gerar_pdf_projeto_completo(
         )
         posicao_y -= 0.35 * cm
 
-    # ========================================================
-    # CAPA
-    # ========================================================
+
+
+
     escrever_titulo("ReqFlow - Documentação Formal do Projeto")
 
     escrever_texto(
@@ -386,9 +386,9 @@ def gerar_pdf_projeto_completo(
     escrever_espaco(0.5)
     escrever_linha_horizontal()
 
-    # ========================================================
-    # 1. DADOS DO PROJETO
-    # ========================================================
+
+
+
     escrever_subtitulo("1. Dados do Projeto")
 
     escrever_texto(f"ID do projeto: {projeto[0]}")
@@ -408,9 +408,9 @@ def gerar_pdf_projeto_completo(
 
     escrever_espaco(0.4)
 
-    # ========================================================
-    # 2. RESUMO DOS REQUISITOS
-    # ========================================================
+
+
+
     escrever_subtitulo("2. Resumo dos Requisitos")
 
     if not requisitos:
@@ -430,9 +430,9 @@ def gerar_pdf_projeto_completo(
 
     escrever_espaco(0.4)
 
-    # ========================================================
-    # 3. DETALHAMENTO DOS REQUISITOS
-    # ========================================================
+
+
+
     escrever_subtitulo("3. Detalhamento dos Requisitos")
 
     if not requisitos:
@@ -457,9 +457,9 @@ def gerar_pdf_projeto_completo(
 
             escrever_espaco(0.3)
 
-    # ========================================================
-    # 4. APROVAÇÕES E REPROVAÇÕES
-    # ========================================================
+
+
+
     escrever_subtitulo("4. Aprovações e Reprovações")
 
     if not aprovacoes_reprovacoes:
@@ -482,9 +482,9 @@ def gerar_pdf_projeto_completo(
 
             escrever_espaco(0.25)
 
-    # ========================================================
-    # 5. COMENTÁRIOS / COLABORAÇÃO
-    # ========================================================
+
+
+
     escrever_subtitulo("5. Comentários e Colaboração")
 
     if not comentarios:
@@ -507,9 +507,9 @@ def gerar_pdf_projeto_completo(
 
             escrever_espaco(0.25)
 
-    # ========================================================
-    # 6. HISTÓRICO / RASTREABILIDADE
-    # ========================================================
+
+
+
     escrever_subtitulo("6. Histórico e Rastreabilidade")
 
     if not historico:
@@ -534,9 +534,9 @@ def gerar_pdf_projeto_completo(
 
             escrever_espaco(0.25)
 
-    # ========================================================
-    # 7. FORMALIZAÇÃO
-    # ========================================================
+
+
+
     escrever_subtitulo("7. Formalização")
 
     escrever_texto(
@@ -559,9 +559,9 @@ def gerar_pdf_projeto_completo(
     return buffer.getvalue(), None
 
 
-# ============================================================
-# EXPORTAÇÃO PDF NA TELA
-# ============================================================
+
+
+
 
 def mostrar_exportacao_pdf(projeto):
     st.subheader("Exportação da Documentação do Projeto")
@@ -645,9 +645,9 @@ def mostrar_exportacao_pdf(projeto):
         )
 
 
-# ============================================================
-# PÁGINA PRINCIPAL DO PERFIL DO PROJETO
-# ============================================================
+
+
+
 
 def pagina_perfil_projeto():
 
@@ -676,14 +676,14 @@ def pagina_perfil_projeto():
         "Exportação PDF"
     ])
 
-    # ==============================
-    # ABA: DADOS DO PROJETO
-    # ==============================
+
+
+
     with aba_dados:
 
-        # ==============================
-        # VISÃO DO CLIENTE
-        # ==============================
+
+
+
         if funcao == "cliente":
             st.text_input("Nome", value=projeto[1], disabled=True)
             st.text_area("Descrição", value=projeto[2], disabled=True)
@@ -704,9 +704,9 @@ def pagina_perfil_projeto():
                 st.session_state["pagina_atual"] = "Projetos"
                 st.rerun()
 
-        # ==============================
-        # VISÃO DO ANALISTA E GERENTE
-        # ==============================
+
+
+
         elif funcao in ["analista", "gerente"]:
 
             nome = st.text_input("Nome", value=projeto[1])
@@ -741,9 +741,9 @@ def pagina_perfil_projeto():
                 value=converter_data_para_input(projeto[5])
             )
 
-            # ==============================
-            # RESPONSÁVEL E CLIENTE DO PROJETO
-            # ==============================
+
+
+
             if funcao == "gerente":
                 responsaveis = listar_responsaveis_projeto()
                 clientes = listar_clientes()
@@ -864,15 +864,15 @@ def pagina_perfil_projeto():
                     st.session_state["pagina_atual"] = "Projetos"
                     st.rerun()
 
-        # ==============================
-        # PERFIS SEM PERMISSÃO
-        # ==============================
+
+
+
         else:
             st.warning("Você não possui permissão para acessar este perfil de projeto.")
 
-    # ==============================
-    # ABA: REQUISITOS
-    # ==============================
+
+
+
     with aba_requisitos:
         if funcao in ["analista", "gerente"]:
             st.info(
@@ -882,16 +882,16 @@ def pagina_perfil_projeto():
 
         mostrar_requisitos_do_projeto(projeto[0])
 
-    # ==============================
-    # ABA: HISTÓRICO / RASTREABILIDADE
-    # ==============================
+
+
+
     with aba_historico:
         st.subheader("Histórico / Rastreabilidade do Projeto")
         mostrar_historico_projeto(projeto[0])
 
-    # ==============================
-    # ABA: EXPORTAÇÃO PDF
-    # ==============================
+
+
+
     with aba_exportacao:
         if funcao in ["analista", "gerente"]:
             mostrar_exportacao_pdf(projeto)

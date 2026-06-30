@@ -3,12 +3,6 @@ from models.usuario import Usuario
 
 
 class UsuarioService:
-    """Camada de serviço responsável pelas operações de usuários.
-
-    Ela mantém o banco SQLite concentrado no database/db.py e transforma
-    os registros retornados pelo banco em objetos Usuario quando necessário.
-    """
-
     def listar(self):
         return db.listar_usuarios()
 
@@ -21,12 +15,15 @@ class UsuarioService:
     def listar_clientes(self):
         return db.listar_clientes()
 
+    def listar_clientes_gestao(self):
+        return db.listar_clientes_gestao()
 
     def buscar_cliente_por_id(self, id_cliente):
         return db.buscar_cliente_por_id(id_cliente)
 
     def buscar_por_id(self, id_usuario):
         registro = db.buscar_usuario_por_id(id_usuario)
+
         if not registro:
             return None
 
@@ -42,11 +39,20 @@ class UsuarioService:
     def cadastrar(self, nome, login, senha, funcao, email):
         return db.cadastrar_usuario(nome, login, senha, funcao, email)
 
+    def cadastrar_cliente(self, nome, login, senha, email):
+        return db.cadastrar_cliente(nome, login, senha, email)
+
     def atualizar(self, id_usuario, nome, login, funcao, email, ativo):
         return db.atualizar_usuario(id_usuario, nome, login, funcao, email, ativo)
 
+    def atualizar_cliente(self, id_cliente, nome, login, email, ativo):
+        return db.atualizar_cliente(id_cliente, nome, login, email, ativo)
+
     def desativar(self, id_usuario):
         return db.desativar_usuario(id_usuario)
+
+    def desativar_cliente(self, id_cliente):
+        return db.desativar_cliente(id_cliente)
 
     def autenticar(self, login, senha):
         return db.autenticar_usuario(login, senha)

@@ -17,9 +17,6 @@ def criar_tabelas():
     conn = conectar()
     cursor = conn.cursor()
 
-    # =========================
-    # TABELA DE USUÁRIOS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,9 +29,6 @@ def criar_tabelas():
         )
     """)
 
-    # =========================
-    # TABELA DE PROJETOS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS projeto (
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,9 +63,6 @@ def criar_tabelas():
         )
     """)
 
-    # =========================
-    # TABELA DE REQUISITOS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS requisitos (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,9 +88,6 @@ def criar_tabelas():
         )
     """)
 
-    # =========================
-    # TABELA DE COMENTÁRIOS DOS REQUISITOS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS comentarios_requisitos (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,9 +106,6 @@ def criar_tabelas():
         )
     """)
 
-    # =========================
-    # TABELA DE HISTÓRICO / RASTREABILIDADE
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS historico_sistema (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,10 +126,6 @@ def criar_tabelas():
     conn.close()
 
 
-# ============================================================
-# USUÁRIOS
-# ============================================================
-
 def criar_usuarios_padrao():
     conn = conectar()
     cursor = conn.cursor()
@@ -160,7 +141,7 @@ def criar_usuarios_padrao():
 
     for usuario in usuarios:
         cursor.execute("""
-            INSERT OR IGNORE INTO usuarios 
+            INSERT OR IGNORE INTO usuarios
             (nome, login, senha, funcao, email, ativo)
             VALUES (?, ?, ?, ?, ?, ?)
         """, usuario)
@@ -345,11 +326,6 @@ def alterar_senha(id_usuario, nova_senha):
     conn.close()
 
 
-# ============================================================
-# CLIENTES
-# Neste MVP, cliente é um usuário com funcao = 'cliente'
-# ============================================================
-
 def listar_clientes():
     conn = conectar()
     cursor = conn.cursor()
@@ -506,10 +482,6 @@ def desativar_cliente(id_cliente):
     return True, "Cliente desativado com sucesso."
 
 
-# ============================================================
-# PROJETOS
-# ============================================================
-
 def criar_projeto(
     nome,
     descricao,
@@ -596,8 +568,13 @@ def listar_projetos_por_usuario(id_usuario):
                 p.descricao,
                 p.status,
                 p.data_inicio,
-                p.data_fim_prevista
+                p.data_fim_prevista,
+                p.data_formalizacao,
+                resp.nome AS responsavel,
+                cli.nome  AS cliente
             FROM projeto p
+            INNER JOIN usuarios resp ON resp.id = p.id_responsavel
+            INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
             ORDER BY p.id DESC
         """)
     else:
@@ -608,8 +585,13 @@ def listar_projetos_por_usuario(id_usuario):
                 p.descricao,
                 p.status,
                 p.data_inicio,
-                p.data_fim_prevista
+                p.data_fim_prevista,
+                p.data_formalizacao,
+                resp.nome AS responsavel,
+                cli.nome  AS cliente
             FROM projeto p
+            INNER JOIN usuarios resp ON resp.id = p.id_responsavel
+            INNER JOIN usuarios cli  ON cli.id  = p.id_cliente
             WHERE p.id_responsavel = ?
                OR p.id_cliente = ?
             ORDER BY p.id DESC
@@ -738,10 +720,6 @@ def excluir_projeto(id_projeto):
     conn.commit()
     conn.close()
 
-
-# ============================================================
-# REQUISITOS
-# ============================================================
 
 def _buscar_id_cliente_do_projeto(cursor, projeto_id):
     cursor.execute("""
@@ -958,10 +936,6 @@ def excluir_requisito(id_requisito):
     conn.close()
 
 
-# ============================================================
-# CONSULTAS COMPLETAS PARA EXPORTAÇÃO PDF
-# ============================================================
-
 def listar_requisitos_completos_por_projeto(id_projeto):
     conn = conectar()
     cursor = conn.cursor()
@@ -1155,10 +1129,6 @@ def listar_aprovacoes_reprovacoes_por_projeto(id_projeto):
     return registros
 
 
-# ============================================================
-# COMENTÁRIOS DOS REQUISITOS
-# ============================================================
-
 def criar_comentario_requisito(id_requisito, id_usuario, comentario):
     conn = conectar()
     cursor = conn.cursor()
@@ -1206,10 +1176,6 @@ def listar_comentarios_requisito(id_requisito):
 
     return comentarios
 
-
-# ============================================================
-# HISTÓRICO / RASTREABILIDADE
-# ============================================================
 
 def registrar_historico(
     tipo_entidade,
@@ -1296,16 +1262,7 @@ def listar_historico_projeto(id_projeto):
     return historico
 
 
-# ============================================================
-# BACKUP DO BANCO DE DADOS
-# ============================================================
-
 def gerar_backup_banco():
-    """
-    Gera uma cópia de segurança do banco sistema.db dentro da pasta backups.
-    O arquivo recebe data e hora no nome para evitar sobrescrever backups antigos.
-    """
-
     caminho_banco = Path(DATABASE_NAME)
 
     if not caminho_banco.exists():
@@ -1326,10 +1283,6 @@ def gerar_backup_banco():
 
 
 def listar_backups_banco():
-    """
-    Lista os backups existentes na pasta backups, do mais recente para o mais antigo.
-    """
-
     pasta_backup = Path("backups")
 
     if not pasta_backup.exists():
@@ -1340,10 +1293,6 @@ def listar_backups_banco():
 
     return backups
 
-
-# ============================================================
-# INICIALIZAÇÃO DO BANCO
-# ============================================================
 
 def inicializar_banco():
     criar_tabelas()

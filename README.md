@@ -262,8 +262,8 @@ As principais tabelas utilizadas são:
 - `usuarios`;
 - `projeto`;
 - `requisitos`;
-- `comentarios`;
-- `historico`.
+- `comentarios_requisitos`;
+- `historico_sistema`.
 
 O arquivo `database/db.py` concentra as funções de criação, consulta, atualização e persistência dos dados.
 

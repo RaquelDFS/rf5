@@ -2,7 +2,6 @@ from services.requisito_service import RequisitoService
 
 
 class RequisitoController:
-    """Controlador de requisitos."""
 
     def __init__(self):
         self.service = RequisitoService()

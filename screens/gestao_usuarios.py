@@ -4,11 +4,6 @@ from controllers.usuario_controller import UsuarioController
 
 
 def tela_gestao_usuarios():
-    """Tela administrativa de usuários.
-
-    Esta tela permite que o gerente cadastre, busque, visualize, edite,
-    desative, reative e redefina a senha dos usuários do sistema.
-    """
 
     controller = UsuarioController()
 
@@ -28,9 +23,9 @@ def tela_gestao_usuarios():
 
     abas = st.tabs(["Cadastrar Usuário", "Buscar Usuários"])
 
-    # ============================================================
-    # ABA 1 - CADASTRAR USUÁRIO
-    # ============================================================
+
+
+
     with abas[0]:
         st.subheader("Cadastrar novo usuário")
 
@@ -94,9 +89,9 @@ def tela_gestao_usuarios():
                 else:
                     st.warning(mensagem)
 
-    # ============================================================
-    # ABA 2 - BUSCAR USUÁRIOS
-    # ============================================================
+
+
+
     with abas[1]:
         st.subheader("Buscar usuários cadastrados")
 
@@ -183,9 +178,9 @@ def tela_gestao_usuarios():
 
             with st.expander(f"{nome} | {login} | {funcao} | {status}"):
 
-                # ====================================================
-                # FORMULÁRIO DE EDIÇÃO DO USUÁRIO
-                # ====================================================
+
+
+
                 with st.form(f"form_editar_usuario_{id_usuario}"):
 
                     novo_nome = st.text_input(
@@ -249,9 +244,9 @@ def tela_gestao_usuarios():
 
                 st.divider()
 
-                # ====================================================
-                # REDEFINIR SENHA PELO GERENTE
-                # ====================================================
+
+
+
                 st.subheader("Redefinir senha")
 
                 with st.form(f"form_redefinir_senha_{id_usuario}"):
@@ -290,9 +285,9 @@ def tela_gestao_usuarios():
 
                 st.divider()
 
-                # ====================================================
-                # DESATIVAR OU REATIVAR USUÁRIO
-                # ====================================================
+
+
+
                 if ativo == 1:
                     if st.button(
                         "Desativar usuário",

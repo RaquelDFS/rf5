@@ -2,7 +2,6 @@ from database import db
 
 
 class ComentarioService:
-    """Camada de serviço responsável pelos comentários dos requisitos."""
 
     def criar(self, id_requisito, id_usuario, comentario):
         return db.criar_comentario_requisito(id_requisito, id_usuario, comentario)

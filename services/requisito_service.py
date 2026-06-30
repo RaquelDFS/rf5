@@ -3,7 +3,6 @@ from models.requisito import Requisito
 
 
 class RequisitoService:
-    """Camada de serviço responsável pelas operações de requisitos."""
 
     def listar_todos(self):
         return db.listar_todos_requisitos()
@@ -30,7 +29,6 @@ class RequisitoService:
         )
 
     def buscar_registro_por_id(self, id_requisito):
-        """Retorna a tupla original do banco para telas que ainda usam índice."""
         return db.buscar_requisito_por_id(id_requisito)
 
     def criar(self, projeto_id, nome, descricao, tipo, visivel_cliente=1, status="em_analise"):
