@@ -1,5 +1,6 @@
 import streamlit as st
 import datetime
+import base64
 from io import BytesIO
 
 from controllers.projeto_controller import ProjetoController
@@ -80,10 +81,6 @@ def listar_historico_por_projeto_e_requisitos(id_projeto):
 
 def listar_aprovacoes_reprovacoes_por_projeto(id_projeto):
     return ProjetoController().listar_aprovacoes_reprovacoes(id_projeto)
-
-
-
-
 
 
 def obter_id_usuario_logado():
@@ -177,6 +174,21 @@ def escrever_linha_pdf(texto, largura_maxima=95):
     return linhas
 
 
+def visualizar_pdf_na_tela(pdf_bytes):
+    base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+
+    visualizador = f"""
+        <iframe
+            src="data:application/pdf;base64,{base64_pdf}"
+            width="100%"
+            height="750px"
+            style="border: 1px solid #D9E6F7; border-radius: 12px;">
+        </iframe>
+    """
+
+    st.markdown(visualizador, unsafe_allow_html=True)
+
+
 def montar_descricao_alteracoes(
     projeto,
     nome,
@@ -227,10 +239,6 @@ def montar_descricao_alteracoes(
     return alteracoes
 
 
-
-
-
-
 def mostrar_historico_projeto(id_projeto):
     historico = listar_historico_projeto(id_projeto)
 
@@ -251,10 +259,6 @@ def mostrar_historico_projeto(id_projeto):
             st.caption(
                 f"Registrado em {data_historico} por {nome_usuario} ({funcao_usuario})"
             )
-
-
-
-
 
 
 def mostrar_requisitos_do_projeto(id_projeto):
@@ -285,10 +289,6 @@ def mostrar_requisitos_do_projeto(id_projeto):
                 st.session_state["requisito_selecionado"] = id_requisito
                 st.session_state["pagina_atual"] = "Perfil Requisito"
                 st.rerun()
-
-
-
-
 
 
 def gerar_pdf_projeto_completo(
@@ -365,9 +365,6 @@ def gerar_pdf_projeto_completo(
         )
         posicao_y -= 0.35 * cm
 
-
-
-
     escrever_titulo("ReqFlow - Documentação Formal do Projeto")
 
     escrever_texto(
@@ -385,9 +382,6 @@ def gerar_pdf_projeto_completo(
 
     escrever_espaco(0.5)
     escrever_linha_horizontal()
-
-
-
 
     escrever_subtitulo("1. Dados do Projeto")
 
@@ -408,9 +402,6 @@ def gerar_pdf_projeto_completo(
 
     escrever_espaco(0.4)
 
-
-
-
     escrever_subtitulo("2. Resumo dos Requisitos")
 
     if not requisitos:
@@ -429,9 +420,6 @@ def gerar_pdf_projeto_completo(
         escrever_texto(f"Requisitos em análise: {total_em_analise}")
 
     escrever_espaco(0.4)
-
-
-
 
     escrever_subtitulo("3. Detalhamento dos Requisitos")
 
@@ -457,9 +445,6 @@ def gerar_pdf_projeto_completo(
 
             escrever_espaco(0.3)
 
-
-
-
     escrever_subtitulo("4. Aprovações e Reprovações")
 
     if not aprovacoes_reprovacoes:
@@ -477,13 +462,13 @@ def gerar_pdf_projeto_completo(
             )
             escrever_texto(f"Ação: {texto_seguro(item['acao'])}", recuo=0.3 * cm)
             escrever_texto(f"Descrição: {texto_seguro(item['descricao'])}", recuo=0.3 * cm)
-            escrever_texto(f"Usuário: {texto_seguro(item['usuario'])} ({texto_seguro(item['funcao'])})", recuo=0.3 * cm)
+            escrever_texto(
+                f"Usuário: {texto_seguro(item['usuario'])} ({texto_seguro(item['funcao'])})",
+                recuo=0.3 * cm
+            )
             escrever_texto(f"Data: {texto_seguro(item['data_historico'])}", recuo=0.3 * cm)
 
             escrever_espaco(0.25)
-
-
-
 
     escrever_subtitulo("5. Comentários e Colaboração")
 
@@ -506,9 +491,6 @@ def gerar_pdf_projeto_completo(
             escrever_texto(f"Comentário: {texto_seguro(comentario['comentario'])}", recuo=0.3 * cm)
 
             escrever_espaco(0.25)
-
-
-
 
     escrever_subtitulo("6. Histórico e Rastreabilidade")
 
@@ -534,9 +516,6 @@ def gerar_pdf_projeto_completo(
 
             escrever_espaco(0.25)
 
-
-
-
     escrever_subtitulo("7. Formalização")
 
     escrever_texto(
@@ -557,10 +536,6 @@ def gerar_pdf_projeto_completo(
 
     buffer.seek(0)
     return buffer.getvalue(), None
-
-
-
-
 
 
 def mostrar_exportacao_pdf(projeto):
@@ -599,6 +574,7 @@ def mostrar_exportacao_pdf(projeto):
     st.divider()
 
     nome_arquivo = f"documentacao_projeto_{projeto[0]}.pdf"
+    chave_pdf = f"pdf_projeto_{projeto[0]}"
 
     if st.button("Gerar PDF do Projeto"):
         pdf_bytes, erro = gerar_pdf_projeto_completo(
@@ -613,7 +589,7 @@ def mostrar_exportacao_pdf(projeto):
             st.error(erro)
             return
 
-        st.session_state[f"pdf_projeto_{projeto[0]}"] = pdf_bytes
+        st.session_state[chave_pdf] = pdf_bytes
 
         data_formalizacao = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
         id_usuario_logado = obter_id_usuario_logado()
@@ -634,23 +610,29 @@ def mostrar_exportacao_pdf(projeto):
 
         st.success("PDF gerado com sucesso.")
 
-    pdf_salvo = st.session_state.get(f"pdf_projeto_{projeto[0]}")
+    pdf_salvo = st.session_state.get(chave_pdf)
 
     if pdf_salvo:
+        st.divider()
+        st.subheader("Pré-visualização do PDF")
+
+        st.info(
+            "Abaixo está a visualização do documento gerado. "
+            "Caso o navegador não exiba a prévia, utilize o botão de download."
+        )
+
+        visualizar_pdf_na_tela(pdf_salvo)
+
         st.download_button(
             label="Baixar PDF",
             data=pdf_salvo,
             file_name=nome_arquivo,
-            mime="application/pdf"
+            mime="application/pdf",
+            use_container_width=True
         )
 
 
-
-
-
-
 def pagina_perfil_projeto():
-
     if "projeto_selecionado" not in st.session_state:
         st.warning("Nenhum projeto selecionado.")
         return
@@ -676,14 +658,7 @@ def pagina_perfil_projeto():
         "Exportação PDF"
     ])
 
-
-
-
     with aba_dados:
-
-
-
-
         if funcao == "cliente":
             st.text_input("Nome", value=projeto[1], disabled=True)
             st.text_area("Descrição", value=projeto[2], disabled=True)
@@ -704,11 +679,7 @@ def pagina_perfil_projeto():
                 st.session_state["pagina_atual"] = "Projetos"
                 st.rerun()
 
-
-
-
         elif funcao in ["analista", "gerente"]:
-
             nome = st.text_input("Nome", value=projeto[1])
             descricao = st.text_area("Descrição", value=projeto[2])
 
@@ -740,9 +711,6 @@ def pagina_perfil_projeto():
                 "Prazo",
                 value=converter_data_para_input(projeto[5])
             )
-
-
-
 
             if funcao == "gerente":
                 responsaveis = listar_responsaveis_projeto()
@@ -802,7 +770,6 @@ def pagina_perfil_projeto():
 
             with col1:
                 if st.button("Salvar"):
-
                     if not nome.strip() or not descricao.strip():
                         st.error("Preencha o nome e a descrição antes de salvar.")
 
@@ -864,14 +831,8 @@ def pagina_perfil_projeto():
                     st.session_state["pagina_atual"] = "Projetos"
                     st.rerun()
 
-
-
-
         else:
             st.warning("Você não possui permissão para acessar este perfil de projeto.")
-
-
-
 
     with aba_requisitos:
         if funcao in ["analista", "gerente"]:
@@ -882,15 +843,9 @@ def pagina_perfil_projeto():
 
         mostrar_requisitos_do_projeto(projeto[0])
 
-
-
-
     with aba_historico:
         st.subheader("Histórico / Rastreabilidade do Projeto")
         mostrar_historico_projeto(projeto[0])
-
-
-
 
     with aba_exportacao:
         if funcao in ["analista", "gerente"]:
